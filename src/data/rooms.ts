@@ -1,0 +1,528 @@
+import type { Room } from "../types";
+
+const syntheticDisclaimer =
+  "This is synthetic demo content created for the Agents League hackathon. It contains no real company policy, customer data, employee data, tenant content, or confidential information.";
+
+export const rooms: Room[] = [
+  {
+    roomId: "inbox-vault",
+    title: "The Inbox Vault",
+    subtitle: "A countdown pulses over three suspicious messages.",
+    theme: "Phishing and incident reporting",
+    palette: "inbox",
+    learningObjectives: [
+      "Spot phishing indicators",
+      "Use the approved reporting channel",
+      "Escalate urgent credential theft quickly"
+    ],
+    sceneObjects: [
+      {
+        objectId: "mail-terminal",
+        label: "Mail Terminal",
+        description:
+          "Three emails flicker on the terminal. One mixes urgency, an unfamiliar sender, and a credential request.",
+        clueIds: ["inbox-clue-email"],
+        accent: "cyan"
+      },
+      {
+        objectId: "hotline-clock",
+        label: "Hotline Clock",
+        description:
+          "The lock face is marked with a one-hour reporting window and a red emergency channel.",
+        clueIds: ["inbox-clue-time"],
+        accent: "red"
+      },
+      {
+        objectId: "poster",
+        label: "Reporting Poster",
+        description:
+          "A laminated poster says routine phishing reports go to the security portal.",
+        clueIds: ["inbox-clue-portal"],
+        accent: "amber"
+      }
+    ],
+    clues: [
+      {
+        clueId: "inbox-clue-email",
+        label: "Suspicious Email",
+        content:
+          "The payroll message asks for MFA codes, uses an unfamiliar domain, and demands action before lunch.",
+        citationIds: ["CIT-PHISH-31"]
+      },
+      {
+        clueId: "inbox-clue-time",
+        label: "Clock Etching",
+        content:
+          "Suspected phishing must be reported within one hour. Active credential theft needs immediate phone escalation.",
+        citationIds: ["CIT-PHISH-31", "CIT-INC-22"]
+      },
+      {
+        clueId: "inbox-clue-portal",
+        label: "Portal Label",
+        content:
+          "The security reporting portal is the default channel for suspected phishing messages.",
+        citationIds: ["CIT-PHISH-32"]
+      }
+    ],
+    puzzle: {
+      puzzleId: "puzzle-inbox-sequence",
+      roomId: "inbox-vault",
+      type: "sequence_lock",
+      title: "Hotline Sequence Lock",
+      prompt:
+        "Build the correct response sequence for the suspicious payroll email.",
+      instructions:
+        "Select the steps in order. Use Clear if you need to rebuild the sequence.",
+      steps: [
+        {
+          optionId: "portal",
+          label: "Report in portal within one hour",
+          detail:
+            "Use the approved security reporting portal for suspected phishing."
+        },
+        {
+          optionId: "delete",
+          label: "Delete the message silently",
+          detail: "Removes the email but leaves the security team blind."
+        },
+        {
+          optionId: "identify",
+          label: "Identify phishing indicators",
+          detail:
+            "Check sender, urgency, links, credential requests, and attachments."
+        },
+        {
+          optionId: "phone",
+          label: "Phone-escalate active credential theft",
+          detail:
+            "Use only when credentials were entered or theft is in progress."
+        }
+      ],
+      correctOrder: ["identify", "portal", "phone"],
+      citations: [
+        {
+          citationId: "CIT-PHISH-31",
+          sourceId: "SYN-POL-002",
+          sectionId: "3.1",
+          label: "Phishing Reporting Policy, section 3.1",
+          snippet:
+            "Suspected phishing messages must be reported through the security reporting portal within one hour of discovery.",
+          concept: "Phishing reporting window"
+        },
+        {
+          citationId: "CIT-PHISH-32",
+          sourceId: "SYN-POL-002",
+          sectionId: "3.2",
+          label: "Phishing Reporting Policy, section 3.2",
+          snippet:
+            "Employees should preserve the message and avoid forwarding it outside the approved reporting workflow.",
+          concept: "Approved reporting channel"
+        },
+        {
+          citationId: "CIT-INC-22",
+          sourceId: "SYN-POL-004",
+          sectionId: "2.2",
+          label: "Incident Escalation Policy, section 2.2",
+          snippet:
+            "Evidence of active credential theft requires immediate phone escalation to the security response line.",
+          concept: "Urgent incident escalation"
+        }
+      ],
+      hints: [
+        {
+          level: "nudge",
+          label: "Look at the terminal first",
+          text:
+            "The first move is not a channel choice. Decide whether the message has phishing indicators.",
+          citationIds: ["CIT-PHISH-31"]
+        },
+        {
+          level: "concept",
+          label: "Portal before emergency line",
+          text:
+            "Routine suspected phishing uses the portal. The phone line is for evidence that credentials are already being stolen.",
+          citationIds: ["CIT-PHISH-32", "CIT-INC-22"]
+        },
+        {
+          level: "evidence",
+          label: "Read the clock",
+          text:
+            "The cited policy says suspected phishing is reported through the portal within one hour of discovery.",
+          citationIds: ["CIT-PHISH-31", "CIT-PHISH-32"]
+        },
+        {
+          level: "explanation",
+          label: "Answer explanation",
+          text:
+            "The valid sequence is identify indicators, report in the portal within one hour, then phone-escalate only if credential theft is active.",
+          citationIds: ["CIT-PHISH-31", "CIT-PHISH-32", "CIT-INC-22"]
+        }
+      ],
+      successMessage:
+        "The hotline clock clicks open. You preserved the evidence and used the right escalation path.",
+      failureMessage:
+        "The lock rejects the sequence. The policy wants evidence first, then the approved reporting workflow."
+    },
+    exitCondition:
+      "Unlock the incident hotline by ordering the response steps."
+  },
+  {
+    roomId: "data-locker",
+    title: "The Data Locker",
+    subtitle: "Four drawers wait for the right classification labels.",
+    theme: "Data classification and sharing",
+    palette: "locker",
+    learningObjectives: [
+      "Classify information by sensitivity",
+      "Keep restricted data in approved storage",
+      "Avoid exposing confidential material to public tools"
+    ],
+    sceneObjects: [
+      {
+        objectId: "drawer-bank",
+        label: "Drawer Bank",
+        description:
+          "The drawer labels read Public, Internal, Confidential, and Restricted.",
+        clueIds: ["data-clue-labels"],
+        accent: "green"
+      },
+      {
+        objectId: "sharing-badge",
+        label: "Sharing Badge",
+        description:
+          "A badge reader accepts only approved storage destinations for sensitive artifacts.",
+        clueIds: ["data-clue-storage"],
+        accent: "cyan"
+      },
+      {
+        objectId: "sealed-envelope",
+        label: "Sealed Envelope",
+        description:
+          "The envelope warns that customer records and credentials never belong in public AI tools.",
+        clueIds: ["data-clue-ai"],
+        accent: "red"
+      }
+    ],
+    clues: [
+      {
+        clueId: "data-clue-labels",
+        label: "Classification Labels",
+        content:
+          "Public information is approved for broad release, internal data is company-use only, confidential data could harm people or business if exposed, and restricted data has the highest handling controls.",
+        citationIds: ["CIT-DATA-21"]
+      },
+      {
+        clueId: "data-clue-storage",
+        label: "Storage Rule",
+        content:
+          "Confidential and restricted artifacts must stay in approved protected storage, not personal drives or public tools.",
+        citationIds: ["CIT-DATA-33"]
+      },
+      {
+        clueId: "data-clue-ai",
+        label: "AI Tool Warning",
+        content:
+          "Customer records, secrets, access tokens, and unreleased financials must not be pasted into public AI tools.",
+        citationIds: ["CIT-CONF-41", "CIT-AI-24"]
+      }
+    ],
+    puzzle: {
+      puzzleId: "puzzle-data-classification",
+      roomId: "data-locker",
+      type: "classification_lock",
+      title: "Classification Drawer Lock",
+      prompt:
+        "Place each artifact into the correct policy drawer before the locker opens.",
+      instructions:
+        "Choose one classification for each artifact. Every artifact must be classified.",
+      categories: [
+        {
+          categoryId: "public",
+          label: "Public"
+        },
+        {
+          categoryId: "internal",
+          label: "Internal"
+        },
+        {
+          categoryId: "confidential",
+          label: "Confidential"
+        },
+        {
+          categoryId: "restricted",
+          label: "Restricted"
+        }
+      ],
+      artifacts: [
+        {
+          artifactId: "press-post",
+          label: "Published security blog post",
+          detail: "Already reviewed and posted on the public website."
+        },
+        {
+          artifactId: "roadmap",
+          label: "Team launch roadmap",
+          detail: "Internal planning dates for a not-yet-announced feature."
+        },
+        {
+          artifactId: "support-export",
+          label: "Customer support export",
+          detail: "Contains names, account IDs, and case notes."
+        },
+        {
+          artifactId: "token",
+          label: "Service access token",
+          detail: "A credential that can access a protected service."
+        }
+      ],
+      correctCategories: {
+        "press-post": "public",
+        roadmap: "internal",
+        "support-export": "confidential",
+        token: "restricted"
+      },
+      citations: [
+        {
+          citationId: "CIT-DATA-21",
+          sourceId: "SYN-POL-003",
+          sectionId: "2.1",
+          label: "Data Classification Policy, section 2.1",
+          snippet:
+            "Information must be classified as Public, Internal, Confidential, or Restricted based on sensitivity and potential impact.",
+          concept: "Classification levels"
+        },
+        {
+          citationId: "CIT-DATA-33",
+          sourceId: "SYN-POL-003",
+          sectionId: "3.3",
+          label: "Data Classification Policy, section 3.3",
+          snippet:
+            "Confidential and Restricted data must be stored only in approved protected systems.",
+          concept: "Protected storage"
+        },
+        {
+          citationId: "CIT-CONF-41",
+          sourceId: "SYN-POL-006",
+          sectionId: "4.1",
+          label: "Confidential Information Handling Guide, section 4.1",
+          snippet:
+            "Customer records, credentials, and unreleased business information are not approved for public tools.",
+          concept: "Confidential handling"
+        }
+      ],
+      hints: [
+        {
+          level: "nudge",
+          label: "Start with the obvious edges",
+          text:
+            "Published content is the least sensitive. A service token is the most sensitive.",
+          citationIds: ["CIT-DATA-21"]
+        },
+        {
+          level: "concept",
+          label: "Customer data is sensitive",
+          text:
+            "Customer records can harm people or the business if exposed, so they are not public or internal-only content.",
+          citationIds: ["CIT-DATA-21", "CIT-CONF-41"]
+        },
+        {
+          level: "evidence",
+          label: "Storage citation",
+          text:
+            "The policy requires Confidential and Restricted data to stay in approved protected systems.",
+          citationIds: ["CIT-DATA-33"]
+        },
+        {
+          level: "explanation",
+          label: "Answer explanation",
+          text:
+            "The blog post is Public, the roadmap is Internal, the customer export is Confidential, and the access token is Restricted.",
+          citationIds: ["CIT-DATA-21", "CIT-DATA-33", "CIT-CONF-41"]
+        }
+      ],
+      successMessage:
+        "The drawers align and the locker opens. Sensitive artifacts stayed where the policy allows.",
+      failureMessage:
+        "A drawer buzzes. Re-check the sensitivity and impact of each artifact."
+    },
+    exitCondition:
+      "Classify every artifact into the correct drawer before leaving the room."
+  },
+  {
+    roomId: "ai-lab-door",
+    title: "The AI Lab Door",
+    subtitle: "A model console waits behind a glass wall.",
+    theme: "Acceptable AI use and confidential input handling",
+    palette: "lab",
+    learningObjectives: [
+      "Use approved AI tools for approved content",
+      "Remove sensitive inputs before prompting",
+      "Keep human review in the publication path"
+    ],
+    sceneObjects: [
+      {
+        objectId: "model-console",
+        label: "Model Console",
+        description:
+          "The console refuses prompts that include customer details, secrets, or confidential account context.",
+        clueIds: ["lab-clue-console"],
+        accent: "violet"
+      },
+      {
+        objectId: "review-window",
+        label: "Review Window",
+        description:
+          "A sign says AI-generated output needs human review before it can leave the lab.",
+        clueIds: ["lab-clue-review"],
+        accent: "green"
+      },
+      {
+        objectId: "approved-badge",
+        label: "Approved Tool Badge",
+        description:
+          "Only approved AI tools can be used for work content, even after sensitive details are removed.",
+        clueIds: ["lab-clue-approved"],
+        accent: "cyan"
+      }
+    ],
+    clues: [
+      {
+        clueId: "lab-clue-console",
+        label: "Prompt Filter",
+        content:
+          "Prompts must not include customer names, credentials, secrets, or confidential business identifiers.",
+        citationIds: ["CIT-AI-24", "CIT-CONF-41"]
+      },
+      {
+        clueId: "lab-clue-review",
+        label: "Review Step",
+        content:
+          "AI-assisted drafts must be reviewed by a human before publication or external sharing.",
+        citationIds: ["CIT-AI-35"]
+      },
+      {
+        clueId: "lab-clue-approved",
+        label: "Tool Badge",
+        content:
+          "Work content belongs only in approved AI tools and approved workspaces.",
+        citationIds: ["CIT-AI-12"]
+      }
+    ],
+    puzzle: {
+      puzzleId: "puzzle-ai-redaction",
+      roomId: "ai-lab-door",
+      type: "redaction_lock",
+      title: "Prompt Redaction Lock",
+      prompt:
+        "Choose the fragments that must be removed before this prompt can be used in an approved AI tool.",
+      instructions:
+        "Select every unsafe fragment. Leave generic task instructions that do not expose sensitive details.",
+      unsafePrompt:
+        "Summarize the support pattern for Acme Health using account ID AH-9134 and token sk-live-example. Draft a short internal follow-up note.",
+      fragments: [
+        {
+          fragmentId: "customer-name",
+          label: "Acme Health",
+          detail: "A customer name from a support scenario."
+        },
+        {
+          fragmentId: "account-id",
+          label: "account ID AH-9134",
+          detail: "A business identifier tied to a customer account."
+        },
+        {
+          fragmentId: "token",
+          label: "token sk-live-example",
+          detail: "A secret-like credential value."
+        },
+        {
+          fragmentId: "task",
+          label: "Draft a short internal follow-up note",
+          detail: "A generic work instruction with no sensitive details."
+        }
+      ],
+      correctRedactions: ["customer-name", "account-id", "token"],
+      citations: [
+        {
+          citationId: "CIT-AI-12",
+          sourceId: "SYN-POL-001",
+          sectionId: "1.2",
+          label: "Acceptable AI Tools Policy, section 1.2",
+          snippet:
+            "Employees may use approved AI tools for work tasks when the input complies with data handling requirements.",
+          concept: "Approved AI tool use"
+        },
+        {
+          citationId: "CIT-AI-24",
+          sourceId: "SYN-POL-001",
+          sectionId: "2.4",
+          label: "Acceptable AI Tools Policy, section 2.4",
+          snippet:
+            "Do not enter secrets, credentials, customer identifiers, or confidential information into public AI tools.",
+          concept: "Sensitive input restriction"
+        },
+        {
+          citationId: "CIT-AI-35",
+          sourceId: "SYN-POL-001",
+          sectionId: "3.5",
+          label: "Acceptable AI Tools Policy, section 3.5",
+          snippet:
+            "AI-generated work output requires human review before publication, customer delivery, or external sharing.",
+          concept: "Human review requirement"
+        },
+        {
+          citationId: "CIT-CONF-41",
+          sourceId: "SYN-POL-006",
+          sectionId: "4.1",
+          label: "Confidential Information Handling Guide, section 4.1",
+          snippet:
+            "Customer records, credentials, and unreleased business information are not approved for public tools.",
+          concept: "Confidential handling"
+        }
+      ],
+      hints: [
+        {
+          level: "nudge",
+          label: "Separate task from data",
+          text:
+            "The generic drafting instruction can stay. The risky fragments identify a customer, account, or credential.",
+          citationIds: ["CIT-AI-24"]
+        },
+        {
+          level: "concept",
+          label: "Secrets are always unsafe",
+          text:
+            "A token or credential is not acceptable AI input, even if the tool is approved.",
+          citationIds: ["CIT-AI-24", "CIT-CONF-41"]
+        },
+        {
+          level: "evidence",
+          label: "Input restriction citation",
+          text:
+            "The policy specifically blocks secrets, credentials, customer identifiers, and confidential information from public AI tools.",
+          citationIds: ["CIT-AI-24"]
+        },
+        {
+          level: "explanation",
+          label: "Answer explanation",
+          text:
+            "Remove the customer name, account ID, and token. Keep the generic request, then route any AI output through human review.",
+          citationIds: ["CIT-AI-24", "CIT-AI-35", "CIT-CONF-41"]
+        }
+      ],
+      successMessage:
+        "The lab door unlocks. Your prompt is stripped of sensitive details and ready for an approved workflow.",
+      failureMessage:
+        "The prompt filter stays red. Something sensitive is still present, or a safe instruction was removed."
+    },
+    exitCondition:
+      "Redact unsafe prompt fragments and preserve the harmless task instruction."
+  }
+];
+
+export const policyPack = {
+  id: "synthetic-cybersecurity-onboarding",
+  title: "Synthetic Cybersecurity Onboarding",
+  retrievalMode: "static local mock",
+  disclaimer: syntheticDisclaimer
+};
