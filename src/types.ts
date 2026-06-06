@@ -1,6 +1,10 @@
 export type GamePhase = "lobby" | "playing" | "debrief";
 
-export type RetrievalMode = "local_mock" | "foundry_iq" | "azure_ai_search";
+export type RetrievalMode =
+  | "local_mock"
+  | "generated_mock"
+  | "foundry_iq"
+  | "azure_ai_search";
 
 export type PuzzleType =
   | "sequence_lock"
@@ -225,7 +229,14 @@ export type TraceEventType =
   | "retrieval"
   | "citation_drawer_opened"
   | "hint_revealed"
-  | "answer_validated";
+  | "answer_validated"
+  | "source_curated"
+  | "room_designed"
+  | "puzzle_created"
+  | "generation_verified"
+  | "creator_previewed"
+  | "generated_room_played"
+  | "generated_room_exported";
 
 export interface TraceEvent {
   eventId: string;
@@ -245,4 +256,57 @@ export interface GameTrace {
   validation: RoomPackValidationResult;
   events: TraceEvent[];
   recentRetrievals: EvidenceBundle[];
+}
+
+export interface GenerationRequest {
+  sourceId: string;
+  concept: string;
+  difficulty: "standard";
+  seed: string;
+}
+
+export interface AgentStep {
+  stepId: string;
+  agentName:
+    | "Source Curator"
+    | "Room Designer"
+    | "Puzzle Maker"
+    | "Verifier"
+    | "Debrief Writer";
+  status: "passed" | "blocked";
+  summary: string;
+  citationIds: string[];
+}
+
+export interface VerifierResult {
+  valid: boolean;
+  errors: string[];
+  warnings: string[];
+  safetyFlags: string[];
+  roomPackValidation: RoomPackValidationResult;
+}
+
+export interface GeneratedRoomPack {
+  packId: string;
+  title: string;
+  retrievalMode: "generated_mock";
+  disclaimer: string;
+  rooms: Room[];
+}
+
+export interface GeneratedDebrief {
+  title: string;
+  summary: string;
+  concepts: string[];
+  citationIds: string[];
+}
+
+export interface GenerationResult {
+  request: GenerationRequest;
+  evidence: EvidenceBundle;
+  room: Room;
+  roomPack: GeneratedRoomPack;
+  verifierResult: VerifierResult;
+  debrief: GeneratedDebrief;
+  agentSteps: AgentStep[];
 }

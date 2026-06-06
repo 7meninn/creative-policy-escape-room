@@ -1,6 +1,11 @@
 import { z } from "zod";
 
-const retrievalModeSchema = z.enum(["local_mock", "foundry_iq", "azure_ai_search"]);
+const retrievalModeSchema = z.enum([
+  "local_mock",
+  "generated_mock",
+  "foundry_iq",
+  "azure_ai_search"
+]);
 const puzzleTypeSchema = z.enum([
   "sequence_lock",
   "classification_lock",
@@ -188,7 +193,14 @@ export const gameTraceSchema = z.object({
         "retrieval",
         "citation_drawer_opened",
         "hint_revealed",
-        "answer_validated"
+        "answer_validated",
+        "source_curated",
+        "room_designed",
+        "puzzle_created",
+        "generation_verified",
+        "creator_previewed",
+        "generated_room_played",
+        "generated_room_exported"
       ]),
       label: z.string().min(1),
       detail: z.string().min(1),
