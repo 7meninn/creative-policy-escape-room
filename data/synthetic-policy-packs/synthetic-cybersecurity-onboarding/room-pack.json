@@ -196,7 +196,7 @@
           "clueId": "data-clue-ai",
           "label": "AI Tool Warning",
           "content": "Customer records, secrets, access tokens, and unreleased financials must not be pasted into public AI tools.",
-          "citationIds": ["CIT-CONF-41", "CIT-AI-24"]
+          "citationIds": ["CIT-CONF-DATA-41", "CIT-AI-24"]
         }
       ],
       "puzzle": {
@@ -270,7 +270,7 @@
             "concept": "Protected storage"
           },
           {
-            "citationId": "CIT-CONF-41",
+            "citationId": "CIT-CONF-DATA-41",
             "sourceId": "SYN-POL-006",
             "sectionId": "4.1",
             "label": "Confidential Information Handling Guide, section 4.1",
@@ -289,7 +289,7 @@
             "level": "concept",
             "label": "Customer data is sensitive",
             "text": "Customer records can harm people or the business if exposed, so they are not public or internal-only content.",
-            "citationIds": ["CIT-DATA-21", "CIT-CONF-41"]
+            "citationIds": ["CIT-DATA-21", "CIT-CONF-DATA-41"]
           },
           {
             "level": "evidence",
@@ -301,7 +301,7 @@
             "level": "explanation",
             "label": "Answer explanation",
             "text": "The blog post is Public, the roadmap is Internal, the customer export is Confidential, and the access token is Restricted.",
-            "citationIds": ["CIT-DATA-21", "CIT-DATA-33", "CIT-CONF-41"]
+            "citationIds": ["CIT-DATA-21", "CIT-DATA-33", "CIT-CONF-DATA-41"]
           }
         ],
         "successMessage": "The drawers align and the locker opens. Sensitive artifacts stayed where the policy allows.",

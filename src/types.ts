@@ -1,5 +1,7 @@
 export type GamePhase = "lobby" | "playing" | "debrief";
 
+export type RetrievalMode = "local_mock" | "foundry_iq" | "azure_ai_search";
+
 export type PuzzleType =
   | "sequence_lock"
   | "classification_lock"
@@ -12,6 +14,40 @@ export interface Citation {
   label: string;
   snippet: string;
   concept: string;
+}
+
+export interface PolicySection {
+  id: string;
+  title: string;
+  body: string;
+  concepts: string[];
+  puzzleCandidates: string[];
+}
+
+export interface PolicySource {
+  id: string;
+  title: string;
+  version: string;
+  sourceType: "synthetic_policy";
+  ownerRole: string;
+  sections: PolicySection[];
+  tags: string[];
+  allowedAudiences: string[];
+  disclaimer: string;
+}
+
+export interface PolicySourcePack {
+  packId: string;
+  title: string;
+  disclaimer: string;
+  sources: PolicySource[];
+}
+
+export interface PolicyPack {
+  id: string;
+  title: string;
+  retrievalMode: RetrievalMode;
+  disclaimer: string;
 }
 
 export interface Hint {
@@ -107,6 +143,14 @@ export interface Room {
   palette: "inbox" | "locker" | "lab";
 }
 
+export interface RoomPack {
+  packId: string;
+  title: string;
+  retrievalMode: RetrievalMode;
+  disclaimer: string;
+  rooms: Room[];
+}
+
 export interface PuzzleAttempt {
   attempts: number;
   solved: boolean;
@@ -141,3 +185,64 @@ export type PuzzleAnswer =
   | string[]
   | Record<string, string>
   | Set<string>;
+
+export interface EvidenceSnippet {
+  sourceId: string;
+  sectionId: string;
+  title: string;
+  snippet: string;
+  concepts: string[];
+}
+
+export interface EvidenceBundle {
+  query: string;
+  sources: string[];
+  snippets: EvidenceSnippet[];
+  citations: Citation[];
+  retrievalMode: RetrievalMode;
+  confidence: number;
+  safetyFlags: string[];
+}
+
+export interface RetrievalFilters {
+  sourceIds?: string[];
+  sectionIds?: string[];
+  concepts?: string[];
+  limit?: number;
+}
+
+export interface RoomPackValidationResult {
+  valid: boolean;
+  errors: string[];
+  warnings: string[];
+  citationCheckCount: number;
+  roomCount: number;
+  sourceCount: number;
+}
+
+export type TraceEventType =
+  | "pack_loaded"
+  | "retrieval"
+  | "citation_drawer_opened"
+  | "hint_revealed"
+  | "answer_validated";
+
+export interface TraceEvent {
+  eventId: string;
+  type: TraceEventType;
+  label: string;
+  detail: string;
+  timestamp: string;
+  roomId?: string;
+  puzzleId?: string;
+  citationIds?: string[];
+  correct?: boolean;
+}
+
+export interface GameTrace {
+  runId: string;
+  retrievalMode: RetrievalMode;
+  validation: RoomPackValidationResult;
+  events: TraceEvent[];
+  recentRetrievals: EvidenceBundle[];
+}
