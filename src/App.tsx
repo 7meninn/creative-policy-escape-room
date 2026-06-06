@@ -20,7 +20,15 @@ import {
   ShieldCheck,
   X
 } from "lucide-react";
-import { policyPack, roomPackValidation, rooms } from "./data/rooms";
+import { generateRoomDraft } from "./agents/generationPipeline";
+import { verifyGeneratedRoom } from "./agents/verifier";
+import { CreatorMode } from "./creator/CreatorMode";
+import {
+  policyPack,
+  policySources,
+  roomPackValidation,
+  rooms
+} from "./data/rooms";
 import {
   buildDebrief,
   createInitialProgress,
@@ -32,6 +40,8 @@ import { appendRetrieval, appendTraceEvent, createInitialTrace } from "./tracing
 import type {
   Citation,
   ClassificationPuzzle,
+  GenerationRequest,
+  GenerationResult,
   GameTrace,
   PlayerProgress,
   Puzzle,
@@ -43,6 +53,7 @@ import type {
 type ClassificationAnswers = Record<string, Record<string, string>>;
 type SequenceAnswers = Record<string, string[]>;
 type RedactionAnswers = Record<string, Set<string>>;
+type PlayMode = "static" | "generated";
 
 function App() {
   const [progress, setProgress] = useState<PlayerProgress>(createInitialProgress);
@@ -59,15 +70,32 @@ function App() {
   const [trace, setTrace] = useState<GameTrace>(() =>
     createInitialTrace(roomPackValidation, policyPack.retrievalMode)
   );
+  const [creatorOpen, setCreatorOpen] = useState(false);
+  const [generationRequest, setGenerationRequest] = useState<GenerationRequest>({
+    sourceId: "SYN-POL-005",
+    concept: "MFA requirement",
+    difficulty: "standard",
+    seed: "phase-3-default"
+  });
+  const [generationResult, setGenerationResult] =
+    useState<GenerationResult | null>(null);
+  const [activeRooms, setActiveRooms] = useState<Room[]>(rooms);
+  const [playMode, setPlayMode] = useState<PlayMode>("static");
 
-  const currentRoom = rooms[progress.currentRoomIndex];
+  const currentRoom = activeRooms[progress.currentRoomIndex];
   const currentPuzzle = currentRoom?.puzzle;
-  const debrief = useMemo(() => buildDebrief(progress, rooms), [progress]);
+  const debrief = useMemo(
+    () => buildDebrief(progress, activeRooms),
+    [activeRooms, progress]
+  );
 
   const visibleCitations = useMemo(() => {
     const allCitations =
       progress.phase === "debrief" || activeCitationIds
-        ? rooms.flatMap((room) => room.puzzle.citations)
+        ? [
+            ...rooms.flatMap((room) => room.puzzle.citations),
+            ...(generationResult?.room.puzzle.citations ?? [])
+          ]
         : currentPuzzle?.citations ?? [];
 
     if (!activeCitationIds) {
@@ -77,9 +105,11 @@ function App() {
     return allCitations.filter((citation) =>
       activeCitationIds.includes(citation.citationId)
     );
-  }, [activeCitationIds, currentPuzzle, progress.phase]);
+  }, [activeCitationIds, currentPuzzle, generationResult, progress.phase]);
 
   function startGame() {
+    setActiveRooms(rooms);
+    setPlayMode("static");
     setProgress({ ...createInitialProgress(), phase: "playing" });
     setFeedback(null);
     setTrace((current) =>
@@ -97,6 +127,8 @@ function App() {
 
   function restartGame() {
     setProgress(createInitialProgress());
+    setActiveRooms(rooms);
+    setPlayMode("static");
     setSequenceAnswers({});
     setClassificationAnswers({});
     setRedactionAnswers({});
@@ -156,8 +188,10 @@ function App() {
     const revealedHintCount = progress.revealedHints[puzzle.puzzleId] ?? 0;
     const result = evaluateAttempt(puzzle, answer, revealedHintCount);
     const willFinishGame =
-      result.correct && progress.currentRoomIndex === rooms.length - 1;
-    const nextRoom = result.correct ? rooms[progress.currentRoomIndex + 1] : null;
+      result.correct && progress.currentRoomIndex === activeRooms.length - 1;
+    const nextRoom = result.correct
+      ? activeRooms[progress.currentRoomIndex + 1]
+      : null;
 
     setProgress((current) => {
       const previousAttempt = current.puzzleAttempts[puzzle.puzzleId] ?? {
@@ -194,7 +228,7 @@ function App() {
       const completedRoomIds = Array.from(
         new Set([...current.completedRoomIds, room.roomId])
       );
-      const isFinalRoom = current.currentRoomIndex === rooms.length - 1;
+      const isFinalRoom = current.currentRoomIndex === activeRooms.length - 1;
 
       return {
         ...current,
@@ -278,7 +312,10 @@ function App() {
   }
 
   function citationsFor(citationIds?: string[]) {
-    const allCitations = rooms.flatMap((room) => room.puzzle.citations);
+    const allCitations = [
+      ...rooms.flatMap((room) => room.puzzle.citations),
+      ...(generationResult?.room.puzzle.citations ?? [])
+    ];
 
     if (!citationIds) {
       return currentPuzzle?.citations ?? allCitations;
@@ -286,6 +323,111 @@ function App() {
 
     return allCitations.filter((citation) =>
       citationIds.includes(citation.citationId)
+    );
+  }
+
+  function generateCreatorRoom() {
+    const result = generateRoomDraft(generationRequest, verifyGeneratedRoom);
+    setGenerationResult(result);
+    setFeedback(`${result.room.title} generated in Creator Mode.`);
+    setTrace((current) => {
+      const withAgentSteps = result.agentSteps.reduce(
+        (traceState, step) =>
+          appendTraceEvent(traceState, {
+            type: traceTypeForAgent(step.agentName),
+            label: step.agentName,
+            detail: step.summary,
+            citationIds: step.citationIds
+          }),
+        current
+      );
+
+      return appendTraceEvent(withAgentSteps, {
+        type: "creator_previewed",
+        label: "Creator preview generated",
+        detail: `${result.room.title} is ready for review.`,
+        roomId: result.room.roomId,
+        puzzleId: result.room.puzzle.puzzleId,
+        citationIds: result.room.puzzle.citations.map(
+          (citation) => citation.citationId
+        )
+      });
+    });
+  }
+
+  function playGeneratedRoom() {
+    if (!generationResult || !generationResult.verifierResult.valid) {
+      return;
+    }
+
+    setActiveRooms([generationResult.room]);
+    setPlayMode("generated");
+    setProgress({ ...createInitialProgress(), phase: "playing" });
+    setSequenceAnswers({});
+    setClassificationAnswers({});
+    setRedactionAnswers({});
+    setFeedback(null);
+    setDrawerOpen(false);
+    setActiveCitationIds(null);
+    setCreatorOpen(false);
+    setTrace((current) => {
+      const generatedTrace = {
+        ...current,
+        retrievalMode: "generated_mock" as const,
+        validation: generationResult.verifierResult.roomPackValidation
+      };
+      const withRetrieval = appendRetrieval(
+        generatedTrace,
+        retrievePolicyEvidence(generationResult.room.theme, {
+          sourceIds: generationResult.room.puzzle.citations.map(
+            (citation) => citation.sourceId
+          ),
+          limit: 4
+        }),
+        "Generated room evidence retrieved",
+        `Prepared local generated evidence for ${generationResult.room.title}.`
+      );
+
+      return appendTraceEvent(withRetrieval, {
+        type: "generated_room_played",
+        label: "Generated room played",
+        detail: `${generationResult.room.title} entered from Creator Mode.`,
+        roomId: generationResult.room.roomId,
+        puzzleId: generationResult.room.puzzle.puzzleId,
+        citationIds: generationResult.room.puzzle.citations.map(
+          (citation) => citation.citationId
+        )
+      });
+    });
+  }
+
+  function exportGeneratedRoom() {
+    if (!generationResult) {
+      return;
+    }
+
+    const json = JSON.stringify(generationResult.roomPack, null, 2);
+    const blob = new Blob([json], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "generated-identity-gatehouse.room-pack.json";
+    document.body.append(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+
+    setTrace((current) =>
+      appendTraceEvent(current, {
+        type: "generated_room_exported",
+        label: "Generated room exported",
+        detail: "Exported generated room pack JSON from Creator Mode.",
+        roomId: generationResult.room.roomId,
+        puzzleId: generationResult.room.puzzle.puzzleId,
+        citationIds: generationResult.room.puzzle.citations.map(
+          (citation) => citation.citationId
+        )
+      })
     );
   }
 
@@ -305,12 +447,32 @@ function App() {
     <main className="app-shell">
       <Header
         progress={progress}
+        mode={playMode}
         onRestart={restartGame}
         onOpenCitations={() => openCitations()}
       />
 
       {progress.phase === "lobby" && (
-        <Lobby onStart={startGame} onOpenCitations={() => openCitations()} />
+        <>
+          <Lobby
+            onStart={startGame}
+            onOpenCitations={() => openCitations()}
+            onOpenCreator={() => setCreatorOpen(true)}
+          />
+          {creatorOpen && (
+            <CreatorMode
+              sourcePack={policySources}
+              request={generationRequest}
+              result={generationResult}
+              onRequestChange={setGenerationRequest}
+              onGenerate={generateCreatorRoom}
+              onPlayGenerated={playGeneratedRoom}
+              onExportGenerated={exportGeneratedRoom}
+              onClose={() => setCreatorOpen(false)}
+              onOpenCitations={openCitations}
+            />
+          )}
+        </>
       )}
 
       {progress.phase === "playing" && currentRoom && (
@@ -359,6 +521,7 @@ function App() {
           onSubmit={() => submitPuzzle(currentRoom)}
           onRequestHint={() => requestHint(currentPuzzle)}
           onOpenCitations={openCitations}
+          rooms={activeRooms}
         />
       )}
 
@@ -368,6 +531,7 @@ function App() {
           feedback={feedback}
           onRestart={restartGame}
           onOpenCitations={openCitations}
+          totalRooms={activeRooms.length}
         />
       )}
 
@@ -388,15 +552,18 @@ function App() {
 
 interface HeaderProps {
   progress: PlayerProgress;
+  mode: PlayMode;
   onRestart: () => void;
   onOpenCitations: () => void;
 }
 
-function Header({ progress, onRestart, onOpenCitations }: HeaderProps) {
+function Header({ progress, mode, onRestart, onOpenCitations }: HeaderProps) {
   return (
     <header className="topbar">
       <div>
-        <p className="eyebrow">Static local mock</p>
+        <p className="eyebrow">
+          {mode === "generated" ? "Generated mock" : "Static local mock"}
+        </p>
         <h1>Policy Escape Room</h1>
       </div>
       <div className="topbar-actions">
@@ -420,9 +587,10 @@ function Header({ progress, onRestart, onOpenCitations }: HeaderProps) {
 interface LobbyProps {
   onStart: () => void;
   onOpenCitations: () => void;
+  onOpenCreator: () => void;
 }
 
-function Lobby({ onStart, onOpenCitations }: LobbyProps) {
+function Lobby({ onStart, onOpenCitations, onOpenCreator }: LobbyProps) {
   return (
     <section className="lobby-grid">
       <div className="lobby-scene" aria-label="Policy escape room lobby">
@@ -465,6 +633,10 @@ function Lobby({ onStart, onOpenCitations }: LobbyProps) {
             <FileText size={18} aria-hidden="true" />
             <span>Policy Pack</span>
           </button>
+          <button className="secondary-button" type="button" onClick={onOpenCreator}>
+            <Lightbulb size={18} aria-hidden="true" />
+            <span>Creator Mode</span>
+          </button>
         </div>
       </div>
     </section>
@@ -473,6 +645,7 @@ function Lobby({ onStart, onOpenCitations }: LobbyProps) {
 
 interface GameViewProps {
   room: Room;
+  rooms: Room[];
   progress: PlayerProgress;
   feedback: string | null;
   sequenceAnswer: string[];
@@ -489,6 +662,7 @@ interface GameViewProps {
 
 function GameView({
   room,
+  rooms,
   progress,
   feedback,
   sequenceAnswer,
@@ -510,7 +684,11 @@ function GameView({
 
   return (
     <section className="game-layout">
-      <ProgressMap currentRoomId={room.roomId} completedRoomIds={progress.completedRoomIds} />
+      <ProgressMap
+        rooms={rooms}
+        currentRoomId={room.roomId}
+        completedRoomIds={progress.completedRoomIds}
+      />
 
       <section className={`room-scene ${room.palette}`} aria-labelledby="room-title">
         <div className="room-heading">
@@ -788,11 +966,12 @@ function RedactionConsole({ puzzle, value, onChange }: RedactionConsoleProps) {
 }
 
 interface ProgressMapProps {
+  rooms: Room[];
   currentRoomId: string;
   completedRoomIds: string[];
 }
 
-function ProgressMap({ currentRoomId, completedRoomIds }: ProgressMapProps) {
+function ProgressMap({ rooms, currentRoomId, completedRoomIds }: ProgressMapProps) {
   return (
     <nav className="progress-map" aria-label="Escape progress">
       <MapIcon size={18} aria-hidden="true" />
@@ -819,6 +998,7 @@ function ProgressMap({ currentRoomId, completedRoomIds }: ProgressMapProps) {
 interface DebriefViewProps {
   debrief: ReturnType<typeof buildDebrief>;
   feedback: string | null;
+  totalRooms: number;
   onRestart: () => void;
   onOpenCitations: (citationIds?: string[]) => void;
 }
@@ -826,6 +1006,7 @@ interface DebriefViewProps {
 function DebriefView({
   debrief,
   feedback,
+  totalRooms,
   onRestart,
   onOpenCitations
 }: DebriefViewProps) {
@@ -844,7 +1025,9 @@ function DebriefView({
           <p>Final score</p>
         </article>
         <article className="metric-panel">
-          <span>{debrief.roomsCompleted}/3</span>
+          <span>
+            {debrief.roomsCompleted}/{totalRooms}
+          </span>
           <p>Rooms cleared</p>
         </article>
         <article className="metric-panel">
@@ -947,6 +1130,23 @@ function uniqueCitations(citations: Citation[]) {
   return Array.from(
     new Map(citations.map((citation) => [citation.citationId, citation])).values()
   );
+}
+
+function traceTypeForAgent(agentName: GenerationResult["agentSteps"][number]["agentName"]) {
+  if (agentName === "Source Curator") {
+    return "source_curated";
+  }
+  if (agentName === "Room Designer") {
+    return "room_designed";
+  }
+  if (agentName === "Puzzle Maker") {
+    return "puzzle_created";
+  }
+  if (agentName === "Verifier") {
+    return "generation_verified";
+  }
+
+  return "creator_previewed";
 }
 
 interface TracePanelProps {
