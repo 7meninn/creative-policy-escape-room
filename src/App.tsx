@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import {
+  Activity,
   AlertTriangle,
   BookOpen,
   Check,
@@ -19,16 +20,19 @@ import {
   ShieldCheck,
   X
 } from "lucide-react";
-import { policyPack, rooms } from "./data/rooms";
+import { policyPack, roomPackValidation, rooms } from "./data/rooms";
 import {
   buildDebrief,
   createInitialProgress,
   evaluateAttempt,
   scoreHint
 } from "./gameLogic";
+import { retrievePolicyEvidence } from "./retrieval/localMock";
+import { appendRetrieval, appendTraceEvent, createInitialTrace } from "./tracing";
 import type {
   Citation,
   ClassificationPuzzle,
+  GameTrace,
   PlayerProgress,
   Puzzle,
   RedactionPuzzle,
@@ -51,10 +55,14 @@ function App() {
     null
   );
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [traceOpen, setTraceOpen] = useState(false);
+  const [trace, setTrace] = useState<GameTrace>(() =>
+    createInitialTrace(roomPackValidation, policyPack.retrievalMode)
+  );
 
   const currentRoom = rooms[progress.currentRoomIndex];
   const currentPuzzle = currentRoom?.puzzle;
-  const debrief = useMemo(() => buildDebrief(progress), [progress]);
+  const debrief = useMemo(() => buildDebrief(progress, rooms), [progress]);
 
   const visibleCitations = useMemo(() => {
     const allCitations =
@@ -74,6 +82,17 @@ function App() {
   function startGame() {
     setProgress({ ...createInitialProgress(), phase: "playing" });
     setFeedback(null);
+    setTrace((current) =>
+      appendRetrieval(
+        current,
+        retrievePolicyEvidence(rooms[0].theme, {
+          sourceIds: rooms[0].puzzle.citations.map((citation) => citation.sourceId),
+          limit: 4
+        }),
+        "Room evidence retrieved",
+        `Prepared local evidence for ${rooms[0].title}.`
+      )
+    );
   }
 
   function restartGame() {
@@ -84,6 +103,7 @@ function App() {
     setFeedback(null);
     setDrawerOpen(false);
     setActiveCitationIds(null);
+    setTrace(createInitialTrace(roomPackValidation, policyPack.retrievalMode));
   }
 
   function collectClues(room: Room, clueIds: string[]) {
@@ -101,6 +121,8 @@ function App() {
   }
 
   function requestHint(puzzle: Puzzle) {
+    const currentHintCount = progress.revealedHints[puzzle.puzzleId] ?? 0;
+    const nextHint = puzzle.hints[Math.min(currentHintCount, puzzle.hints.length - 1)];
     setProgress((current) => {
       const currentCount = current.revealedHints[puzzle.puzzleId] ?? 0;
       const nextCount = Math.min(currentCount + 1, puzzle.hints.length);
@@ -115,6 +137,16 @@ function App() {
       };
     });
 
+    setTrace((current) =>
+      appendTraceEvent(current, {
+        type: "hint_revealed",
+        label: nextHint.label,
+        detail: nextHint.text,
+        roomId: puzzle.roomId,
+        puzzleId: puzzle.puzzleId,
+        citationIds: nextHint.citationIds
+      })
+    );
     setFeedback("A policy-grounded hint is now available.");
   }
 
@@ -125,6 +157,7 @@ function App() {
     const result = evaluateAttempt(puzzle, answer, revealedHintCount);
     const willFinishGame =
       result.correct && progress.currentRoomIndex === rooms.length - 1;
+    const nextRoom = result.correct ? rooms[progress.currentRoomIndex + 1] : null;
 
     setProgress((current) => {
       const previousAttempt = current.puzzleAttempts[puzzle.puzzleId] ?? {
@@ -176,6 +209,31 @@ function App() {
     });
 
     setFeedback(result.correct && !willFinishGame ? null : result.message);
+    setTrace((current) => {
+      const withValidationEvent = appendTraceEvent(current, {
+        type: "answer_validated",
+        label: result.correct ? "Correct answer" : "Wrong answer",
+        detail: result.message,
+        roomId: room.roomId,
+        puzzleId: puzzle.puzzleId,
+        citationIds: puzzle.citations.map((citation) => citation.citationId),
+        correct: result.correct
+      });
+
+      if (!nextRoom) {
+        return withValidationEvent;
+      }
+
+      return appendRetrieval(
+        withValidationEvent,
+        retrievePolicyEvidence(nextRoom.theme, {
+          sourceIds: nextRoom.puzzle.citations.map((citation) => citation.sourceId),
+          limit: 4
+        }),
+        "Room evidence retrieved",
+        `Prepared local evidence for ${nextRoom.title}.`
+      );
+    });
     if (result.correct) {
       setActiveCitationIds(puzzle.citations.map((citation) => citation.citationId));
       setDrawerOpen(true);
@@ -183,8 +241,52 @@ function App() {
   }
 
   function openCitations(citationIds?: string[]) {
+    const matchedCitations = citationsFor(citationIds);
+    const query =
+      matchedCitations.map((citation) => citation.concept).join(" ") ||
+      currentRoom?.theme ||
+      policyPack.title;
+
+    setTrace((current) =>
+      appendTraceEvent(
+        appendRetrieval(
+          current,
+          retrievePolicyEvidence(query, {
+            sourceIds: matchedCitations.map((citation) => citation.sourceId),
+            sectionIds: matchedCitations.map(
+              (citation) => `${citation.sourceId}#${citation.sectionId}`
+            ),
+            limit: Math.max(1, matchedCitations.length)
+          }),
+          "Citation evidence retrieved",
+          `${matchedCitations.length || "All"} citation references requested.`
+        ),
+        {
+          type: "citation_drawer_opened",
+          label: "Citation drawer opened",
+          detail: citationIds?.length
+            ? `${citationIds.length} focused citation IDs.`
+            : "All visible citations requested.",
+          roomId: currentRoom?.roomId,
+          puzzleId: currentPuzzle?.puzzleId,
+          citationIds
+        }
+      )
+    );
     setActiveCitationIds(citationIds ?? null);
     setDrawerOpen(true);
+  }
+
+  function citationsFor(citationIds?: string[]) {
+    const allCitations = rooms.flatMap((room) => room.puzzle.citations);
+
+    if (!citationIds) {
+      return currentPuzzle?.citations ?? allCitations;
+    }
+
+    return allCitations.filter((citation) =>
+      citationIds.includes(citation.citationId)
+    );
   }
 
   function getPuzzleAnswer(puzzle: Puzzle) {
@@ -268,6 +370,12 @@ function App() {
           onOpenCitations={openCitations}
         />
       )}
+
+      <TracePanel
+        trace={trace}
+        open={traceOpen}
+        onToggle={() => setTraceOpen((current) => !current)}
+      />
 
       <CitationDrawer
         open={drawerOpen}
@@ -838,6 +946,80 @@ function CitationDrawer({ open, citations, onClose }: CitationDrawerProps) {
 function uniqueCitations(citations: Citation[]) {
   return Array.from(
     new Map(citations.map((citation) => [citation.citationId, citation])).values()
+  );
+}
+
+interface TracePanelProps {
+  trace: GameTrace;
+  open: boolean;
+  onToggle: () => void;
+}
+
+function TracePanel({ trace, open, onToggle }: TracePanelProps) {
+  const latestEvent = trace.events[0];
+
+  return (
+    <section className={`trace-panel ${open ? "open" : ""}`} aria-label="Game trace">
+      <button className="trace-toggle" type="button" onClick={onToggle}>
+        <Activity size={18} aria-hidden="true" />
+        <span>Trace</span>
+        <strong>{trace.retrievalMode}</strong>
+      </button>
+
+      {open && (
+        <div className="trace-body">
+          <div className="trace-metrics">
+            <span>{trace.validation.valid ? "Valid pack" : "Invalid pack"}</span>
+            <span>{trace.validation.citationCheckCount} citation checks</span>
+            <span>{trace.recentRetrievals.length} retrievals</span>
+          </div>
+
+          {latestEvent && (
+            <article className="trace-latest">
+              <strong>{latestEvent.label}</strong>
+              <p>{latestEvent.detail}</p>
+            </article>
+          )}
+
+          <div className="trace-columns">
+            <div>
+              <h3>Recent retrievals</h3>
+              {trace.recentRetrievals.length === 0 ? (
+                <p className="muted">No retrieval queries yet.</p>
+              ) : (
+                trace.recentRetrievals.map((bundle, index) => (
+                  <article className="trace-row" key={`${bundle.query}-${index}`}>
+                    <strong>{bundle.query || "Empty query"}</strong>
+                    <p>
+                      {bundle.snippets.length} snippets · confidence{" "}
+                      {Math.round(bundle.confidence * 100)}%
+                    </p>
+                  </article>
+                ))
+              )}
+            </div>
+
+            <div>
+              <h3>Validation events</h3>
+              {trace.events.slice(0, 5).map((event) => (
+                <article className="trace-row" key={event.eventId}>
+                  <strong>{event.label}</strong>
+                  <p>{event.type}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+
+          {trace.validation.errors.length > 0 && (
+            <div className="trace-errors">
+              {trace.validation.errors.map((error) => (
+                <p key={error}>{error}</p>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </section>
   );
 }
 

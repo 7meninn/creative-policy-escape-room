@@ -1,4 +1,3 @@
-import { rooms } from "./data/rooms";
 import type {
   Debrief,
   PlayerProgress,
@@ -85,7 +84,7 @@ export function evaluateAttempt(
   };
 }
 
-export function buildDebrief(progress: PlayerProgress): Debrief {
+export function buildDebrief(progress: PlayerProgress, rooms: PuzzleRoom[]): Debrief {
   const completedRooms = rooms.filter((room) =>
     progress.completedRoomIds.includes(room.roomId)
   );
@@ -132,3 +131,8 @@ function setsEqual(left: Set<string>, right: Set<string>): boolean {
 function isRecord(value: PuzzleAnswer): value is Record<string, string> {
   return !Array.isArray(value) && !(value instanceof Set) && value !== null;
 }
+
+type PuzzleRoom = {
+  roomId: string;
+  puzzle: Puzzle;
+};
