@@ -34,5 +34,12 @@ export default [
         }
       ]
     }
+  },
+  {
+    files: ["server/**/*.ts"],
+    languageOptions: {
+      ecmaVersion: 2022,
+      globals: globals.node
+    }
   }
 ];

@@ -5,12 +5,16 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "api:foundry": "tsx server/foundryApi.ts",
+    "dev:foundry": "concurrently -k -n api,web \"npm run api:foundry\" \"cross-env VITE_RETRIEVAL_MODE=foundry_iq vite\"",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "test": "vitest run"
   },
   "dependencies": {
+    "@azure/identity": "^4.13.1",
     "@vitejs/plugin-react": "^5.0.0",
+    "dotenv": "^17.4.2",
     "lucide-react": "^0.468.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
@@ -23,13 +27,17 @@
     "@testing-library/jest-dom": "^6.6.0",
     "@testing-library/react": "^16.0.0",
     "@testing-library/user-event": "^14.5.0",
+    "@types/node": "^25.9.2",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "concurrently": "^10.0.3",
+    "cross-env": "^10.1.0",
     "eslint": "^9.0.0",
     "eslint-plugin-react-hooks": "^5.0.0",
     "eslint-plugin-react-refresh": "^0.4.0",
     "globals": "^15.0.0",
     "jsdom": "^25.0.0",
+    "tsx": "^4.22.4",
     "typescript-eslint": "^8.0.0",
     "vitest": "^4.1.8"
   }
