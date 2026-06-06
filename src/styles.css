@@ -369,6 +369,18 @@ h3 {
   color: var(--green);
 }
 
+.generated-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.generated-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  transform: none;
+}
+
 .agent-step-grid {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));

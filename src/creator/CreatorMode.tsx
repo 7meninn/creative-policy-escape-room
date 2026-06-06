@@ -1,4 +1,12 @@
-import { BookOpen, Check, Lightbulb, ShieldCheck, X } from "lucide-react";
+import {
+  BookOpen,
+  Check,
+  FileText,
+  Lightbulb,
+  Play,
+  ShieldCheck,
+  X
+} from "lucide-react";
 import type {
   GenerationRequest,
   GenerationResult,
@@ -11,6 +19,8 @@ interface CreatorModeProps {
   result: GenerationResult | null;
   onRequestChange: (request: GenerationRequest) => void;
   onGenerate: () => void;
+  onPlayGenerated: () => void;
+  onExportGenerated: () => void;
   onClose: () => void;
   onOpenCitations: (citationIds?: string[]) => void;
 }
@@ -21,6 +31,8 @@ export function CreatorMode({
   result,
   onRequestChange,
   onGenerate,
+  onPlayGenerated,
+  onExportGenerated,
   onClose,
   onOpenCitations
 }: CreatorModeProps) {
@@ -127,6 +139,26 @@ export function CreatorMode({
             <span>
               {result.verifierResult.roomPackValidation.citationCheckCount} citation checks
             </span>
+          </div>
+
+          <div className="generated-actions">
+            <button
+              className="primary-button"
+              type="button"
+              onClick={onPlayGenerated}
+              disabled={!result.verifierResult.valid}
+            >
+              <Play size={18} aria-hidden="true" />
+              <span>Play Generated Room</span>
+            </button>
+            <button
+              className="secondary-button"
+              type="button"
+              onClick={onExportGenerated}
+            >
+              <FileText size={18} aria-hidden="true" />
+              <span>Export JSON</span>
+            </button>
           </div>
 
           <div className="agent-step-grid">
