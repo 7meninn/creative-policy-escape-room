@@ -95,7 +95,7 @@ describe("buildDebrief", () => {
       }
     };
 
-    const debrief = buildDebrief(progress);
+    const debrief = buildDebrief(progress, rooms);
 
     expect(debrief.roomsCompleted).toBe(3);
     expect(debrief.status).toBe("escaped_with_hints");

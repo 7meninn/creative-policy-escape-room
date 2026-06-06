@@ -2,13 +2,20 @@
 
 [![CI](https://github.com/7meninn/creative-policy-escape-room/actions/workflows/ci.yml/badge.svg)](https://github.com/7meninn/creative-policy-escape-room/actions/workflows/ci.yml)
 
-Static Phase 1 browser game for the Agents League Creative Apps track.
+Playable browser game for the Agents League Creative Apps track. Phase 2 makes
+the game data-driven with validated synthetic policy JSON, deterministic local
+mock retrieval, and a visible `GameTrace`.
 
-## What works in Phase 1
+## What works
 
 - Three playable rooms: Inbox Vault, Data Locker, and AI Lab Door.
-- Static synthetic policy content only.
+- Canonical room and policy data in JSON under
+  `data/synthetic-policy-packs/synthetic-cybersecurity-onboarding/`.
+- Runtime schema validation with citation and source-section checks.
+- Deterministic `local_mock` retrieval over the synthetic policy pack.
 - Inventory, puzzle console, progress map, citation drawer, score, hints, and final debrief.
+- Collapsible trace panel showing retrieval mode, validation status, citation
+  checks, answer validation events, and recent retrieval queries.
 - No AI, no Foundry IQ, no MCP, and no credentials required.
 
 ## Run locally
@@ -26,6 +33,21 @@ Open the local Vite URL shown in the terminal.
 2. Classify artifacts in the Data Locker.
 3. Redact unsafe AI prompt fragments in the AI Lab Door.
 4. Review the final debrief and citation report.
+
+## Data-driven mock mode
+
+The app intentionally uses `local_mock` retrieval in this phase. The retrieval
+adapter reads only synthetic JSON policy sources and returns deterministic
+`EvidenceBundle` objects with snippets, citations, confidence, safety flags, and
+`retrievalMode: "local_mock"`.
+
+The room pack validator checks that:
+
+- every puzzle has citations,
+- clue and hint citation IDs resolve,
+- citation source and section IDs exist in the policy source pack,
+- duplicate citation IDs fail validation,
+- uncited puzzles fail closed.
 
 ## Verify
 

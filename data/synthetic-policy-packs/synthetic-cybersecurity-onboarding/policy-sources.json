@@ -1,0 +1,156 @@
+{
+  "packId": "synthetic-cybersecurity-onboarding",
+  "title": "Synthetic Cybersecurity Onboarding",
+  "disclaimer": "This is synthetic demo content created for the Agents League hackathon. It contains no real company policy, customer data, employee data, tenant content, or confidential information.",
+  "sources": [
+    {
+      "id": "SYN-POL-001",
+      "title": "Acceptable AI Tools Policy",
+      "version": "1.0",
+      "sourceType": "synthetic_policy",
+      "ownerRole": "Fictional AI Governance Lead",
+      "tags": ["ai", "governance", "review"],
+      "allowedAudiences": ["hackathon_demo", "public"],
+      "disclaimer": "This is synthetic demo content created for the Agents League hackathon. It contains no real company policy, customer data, employee data, tenant content, or confidential information.",
+      "sections": [
+        {
+          "id": "1.2",
+          "title": "Approved AI Tool Use",
+          "body": "Employees may use approved AI tools for work tasks when the input complies with data handling requirements.",
+          "concepts": ["Approved AI tool use"],
+          "puzzleCandidates": ["Select which work prompts are allowed in approved AI tools."]
+        },
+        {
+          "id": "2.4",
+          "title": "Sensitive Input Restrictions",
+          "body": "Do not enter secrets, credentials, customer identifiers, or confidential information into public AI tools.",
+          "concepts": ["Sensitive input restriction"],
+          "puzzleCandidates": ["Redact unsafe prompt fragments before using an AI tool."]
+        },
+        {
+          "id": "3.5",
+          "title": "Human Review",
+          "body": "AI-generated work output requires human review before publication, customer delivery, or external sharing.",
+          "concepts": ["Human review requirement"],
+          "puzzleCandidates": ["Choose the review step before publishing AI-generated output."]
+        }
+      ]
+    },
+    {
+      "id": "SYN-POL-002",
+      "title": "Phishing Reporting Policy",
+      "version": "1.0",
+      "sourceType": "synthetic_policy",
+      "ownerRole": "Fictional Security Awareness Manager",
+      "tags": ["phishing", "reporting", "security"],
+      "allowedAudiences": ["hackathon_demo", "public"],
+      "disclaimer": "This is synthetic demo content created for the Agents League hackathon. It contains no real company policy, customer data, employee data, tenant content, or confidential information.",
+      "sections": [
+        {
+          "id": "3.1",
+          "title": "Reporting Window",
+          "body": "Suspected phishing messages must be reported through the security reporting portal within one hour of discovery.",
+          "concepts": ["Phishing reporting window"],
+          "puzzleCandidates": ["Unlock a timed hotline using the one-hour reporting threshold."]
+        },
+        {
+          "id": "3.2",
+          "title": "Approved Reporting Channel",
+          "body": "Employees should preserve the message and avoid forwarding it outside the approved reporting workflow.",
+          "concepts": ["Approved reporting channel"],
+          "puzzleCandidates": ["Choose the approved portal instead of forwarding the suspicious email."]
+        }
+      ]
+    },
+    {
+      "id": "SYN-POL-003",
+      "title": "Data Classification Policy",
+      "version": "1.0",
+      "sourceType": "synthetic_policy",
+      "ownerRole": "Fictional Data Protection Lead",
+      "tags": ["data", "classification", "storage"],
+      "allowedAudiences": ["hackathon_demo", "public"],
+      "disclaimer": "This is synthetic demo content created for the Agents League hackathon. It contains no real company policy, customer data, employee data, tenant content, or confidential information.",
+      "sections": [
+        {
+          "id": "2.1",
+          "title": "Classification Levels",
+          "body": "Information must be classified as Public, Internal, Confidential, or Restricted based on sensitivity and potential impact.",
+          "concepts": ["Classification levels"],
+          "puzzleCandidates": ["Sort artifacts into Public, Internal, Confidential, and Restricted drawers."]
+        },
+        {
+          "id": "3.3",
+          "title": "Protected Storage",
+          "body": "Confidential and Restricted data must be stored only in approved protected systems.",
+          "concepts": ["Protected storage"],
+          "puzzleCandidates": ["Choose where sensitive artifacts can be stored."]
+        }
+      ]
+    },
+    {
+      "id": "SYN-POL-004",
+      "title": "Incident Escalation Policy",
+      "version": "1.0",
+      "sourceType": "synthetic_policy",
+      "ownerRole": "Fictional Incident Response Lead",
+      "tags": ["incident", "escalation", "security"],
+      "allowedAudiences": ["hackathon_demo", "public"],
+      "disclaimer": "This is synthetic demo content created for the Agents League hackathon. It contains no real company policy, customer data, employee data, tenant content, or confidential information.",
+      "sections": [
+        {
+          "id": "2.2",
+          "title": "Active Credential Theft",
+          "body": "Evidence of active credential theft requires immediate phone escalation to the security response line.",
+          "concepts": ["Urgent incident escalation"],
+          "puzzleCandidates": ["Decide when to use phone escalation after identifying phishing evidence."]
+        }
+      ]
+    },
+    {
+      "id": "SYN-POL-005",
+      "title": "Password And MFA Policy",
+      "version": "1.0",
+      "sourceType": "synthetic_policy",
+      "ownerRole": "Fictional Identity Security Lead",
+      "tags": ["password", "mfa", "identity"],
+      "allowedAudiences": ["hackathon_demo", "public"],
+      "disclaimer": "This is synthetic demo content created for the Agents League hackathon. It contains no real company policy, customer data, employee data, tenant content, or confidential information.",
+      "sections": [
+        {
+          "id": "1.1",
+          "title": "MFA Requirement",
+          "body": "Work accounts must use multifactor authentication when accessing protected systems.",
+          "concepts": ["MFA requirement"],
+          "puzzleCandidates": ["Identify which sign-in attempt needs MFA."]
+        },
+        {
+          "id": "2.1",
+          "title": "Password Reuse",
+          "body": "Employees must not reuse passwords across work and personal services.",
+          "concepts": ["Password reuse prevention"],
+          "puzzleCandidates": ["Reject a password choice that repeats a personal account password."]
+        }
+      ]
+    },
+    {
+      "id": "SYN-POL-006",
+      "title": "Confidential Information Handling Guide",
+      "version": "1.0",
+      "sourceType": "synthetic_policy",
+      "ownerRole": "Fictional Privacy Program Manager",
+      "tags": ["confidential", "privacy", "handling"],
+      "allowedAudiences": ["hackathon_demo", "public"],
+      "disclaimer": "This is synthetic demo content created for the Agents League hackathon. It contains no real company policy, customer data, employee data, tenant content, or confidential information.",
+      "sections": [
+        {
+          "id": "4.1",
+          "title": "Public Tool Restrictions",
+          "body": "Customer records, credentials, and unreleased business information are not approved for public tools.",
+          "concepts": ["Confidential handling"],
+          "puzzleCandidates": ["Identify which prompt fragments must be removed before using an AI tool."]
+        }
+      ]
+    }
+  ]
+}
