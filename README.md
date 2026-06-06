@@ -2,9 +2,10 @@
 
 [![CI](https://github.com/7meninn/creative-policy-escape-room/actions/workflows/ci.yml/badge.svg)](https://github.com/7meninn/creative-policy-escape-room/actions/workflows/ci.yml)
 
-Playable browser game for the Agents League Creative Apps track. Phase 2 makes
-the game data-driven with validated synthetic policy JSON, deterministic local
-mock retrieval, deterministic generated-room agents, and a visible `GameTrace`.
+Playable browser game for the Agents League Creative Apps track. The game is
+data-driven with validated synthetic policy JSON, deterministic local mock
+retrieval, deterministic generated-room agents, optional Foundry IQ retrieval,
+and a visible `GameTrace`.
 
 ## What works
 
@@ -18,7 +19,8 @@ mock retrieval, deterministic generated-room agents, and a visible `GameTrace`.
   checks, answer validation events, and recent retrieval queries.
 - Creator Mode for `generated_mock` room drafts from local synthetic policy
   sources.
-- No AI, no Foundry IQ, no MCP, and no credentials required.
+- Optional `foundry_iq` mode through a local Node proxy.
+- No MCP, no uploads, and no credentials required for the default demo.
 
 ## Run locally
 
@@ -28,6 +30,29 @@ npm run dev
 ```
 
 Open the local Vite URL shown in the terminal.
+
+## Optional Foundry IQ Mode
+
+Phase 4 can retrieve evidence from a Foundry IQ knowledge base built from the
+same synthetic policy pack. It is optional; `local_mock` remains the reliable
+default.
+
+1. Follow [docs/foundry-iq-setup.md](docs/foundry-iq-setup.md).
+2. Copy `.env.example` to `.env.local` and set the Foundry IQ values.
+3. Authenticate with `az login` or service-principal environment variables.
+4. Run:
+
+```bash
+npm run dev:foundry
+```
+
+The browser calls `POST /api/retrieve-policy-evidence` on the local proxy. The
+proxy uses server-side `DefaultAzureCredential` and maps Foundry IQ references
+back into the existing `EvidenceBundle` and citation format.
+
+If configuration, auth, network access, or citation mapping fails, the trace
+panel shows `foundry_iq fallback` and the app continues with deterministic
+synthetic local evidence.
 
 ## Game path
 
@@ -66,6 +91,9 @@ adapter reads only synthetic JSON policy sources and returns deterministic
 
 Generated rooms use `retrievalMode: "generated_mock"` and are verified with the
 same citation/source-section checks as the static room pack.
+
+`foundry_iq` mode uses the same public TypeScript retrieval shape, but routes
+through the local proxy so credentials are never exposed to the browser.
 
 The room pack validator checks that:
 

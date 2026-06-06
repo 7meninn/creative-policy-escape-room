@@ -6,6 +6,12 @@ const retrievalModeSchema = z.enum([
   "foundry_iq",
   "azure_ai_search"
 ]);
+const retrievalStatusSchema = z.enum([
+  "local_mock",
+  "generated_mock",
+  "foundry_iq",
+  "foundry_iq_fallback"
+]);
 const puzzleTypeSchema = z.enum([
   "sequence_lock",
   "classification_lock",
@@ -177,6 +183,7 @@ export const evidenceBundleSchema = z.object({
 export const gameTraceSchema = z.object({
   runId: z.string().min(1),
   retrievalMode: retrievalModeSchema,
+  retrievalStatus: retrievalStatusSchema,
   validation: z.object({
     valid: z.boolean(),
     errors: z.array(z.string()),
@@ -194,6 +201,8 @@ export const gameTraceSchema = z.object({
         "citation_drawer_opened",
         "hint_revealed",
         "answer_validated",
+        "retrieval_failed",
+        "retrieval_fallback",
         "source_curated",
         "room_designed",
         "puzzle_created",

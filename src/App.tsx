@@ -35,8 +35,15 @@ import {
   evaluateAttempt,
   scoreHint
 } from "./gameLogic";
-import { retrievePolicyEvidence } from "./retrieval/localMock";
-import { appendRetrieval, appendTraceEvent, createInitialTrace } from "./tracing";
+import {
+  getRetrievalRuntimeConfig,
+  retrievePolicyEvidenceRuntime
+} from "./retrieval/runtime";
+import {
+  appendRetrievalResult,
+  appendTraceEvent,
+  createInitialTrace
+} from "./tracing";
 import type {
   Citation,
   ClassificationPuzzle,
@@ -46,6 +53,8 @@ import type {
   PlayerProgress,
   Puzzle,
   RedactionPuzzle,
+  RetrievalFilters,
+  RetrievalStatus,
   Room,
   SequencePuzzle
 } from "./types";
@@ -56,6 +65,7 @@ type RedactionAnswers = Record<string, Set<string>>;
 type PlayMode = "static" | "generated";
 
 function App() {
+  const retrievalConfig = useMemo(() => getRetrievalRuntimeConfig(), []);
   const [progress, setProgress] = useState<PlayerProgress>(createInitialProgress);
   const [sequenceAnswers, setSequenceAnswers] = useState<SequenceAnswers>({});
   const [classificationAnswers, setClassificationAnswers] =
@@ -65,10 +75,17 @@ function App() {
   const [activeCitationIds, setActiveCitationIds] = useState<string[] | null>(
     null
   );
+  const [retrievedCitations, setRetrievedCitations] = useState<Citation[] | null>(
+    null
+  );
   const [feedback, setFeedback] = useState<string | null>(null);
   const [traceOpen, setTraceOpen] = useState(false);
   const [trace, setTrace] = useState<GameTrace>(() =>
-    createInitialTrace(roomPackValidation, policyPack.retrievalMode)
+    createInitialTrace(
+      roomPackValidation,
+      retrievalConfig.mode === "foundry_iq" ? "foundry_iq" : policyPack.retrievalMode,
+      retrievalConfig.mode === "foundry_iq" ? "foundry_iq" : "local_mock"
+    )
   );
   const [creatorOpen, setCreatorOpen] = useState(false);
   const [generationRequest, setGenerationRequest] = useState<GenerationRequest>({
@@ -90,6 +107,10 @@ function App() {
   );
 
   const visibleCitations = useMemo(() => {
+    if (retrievedCitations?.length) {
+      return retrievedCitations;
+    }
+
     const allCitations =
       progress.phase === "debrief" || activeCitationIds
         ? [
@@ -105,23 +126,53 @@ function App() {
     return allCitations.filter((citation) =>
       activeCitationIds.includes(citation.citationId)
     );
-  }, [activeCitationIds, currentPuzzle, generationResult, progress.phase]);
+  }, [
+    activeCitationIds,
+    currentPuzzle,
+    generationResult,
+    progress.phase,
+    retrievedCitations
+  ]);
+
+  function traceMode() {
+    return retrievalConfig.mode === "foundry_iq" ? "foundry_iq" : policyPack.retrievalMode;
+  }
+
+  function traceStatus() {
+    return retrievalConfig.mode === "foundry_iq" ? "foundry_iq" : "local_mock";
+  }
+
+  async function recordRetrieval(
+    query: string,
+    filters: RetrievalFilters,
+    label: string,
+    detail: string,
+    useCitations = false
+  ) {
+    const result = await retrievePolicyEvidenceRuntime(query, filters, retrievalConfig);
+
+    if (useCitations) {
+      setRetrievedCitations(result.evidence.citations);
+    }
+
+    setTrace((current) => appendRetrievalResult(current, result, label, detail));
+  }
 
   function startGame() {
     setActiveRooms(rooms);
     setPlayMode("static");
     setProgress({ ...createInitialProgress(), phase: "playing" });
     setFeedback(null);
-    setTrace((current) =>
-      appendRetrieval(
-        current,
-        retrievePolicyEvidence(rooms[0].theme, {
-          sourceIds: rooms[0].puzzle.citations.map((citation) => citation.sourceId),
-          limit: 4
-        }),
-        "Room evidence retrieved",
-        `Prepared local evidence for ${rooms[0].title}.`
-      )
+    setRetrievedCitations(null);
+    setTrace(createInitialTrace(roomPackValidation, traceMode(), traceStatus()));
+    void recordRetrieval(
+      rooms[0].theme,
+      {
+        sourceIds: rooms[0].puzzle.citations.map((citation) => citation.sourceId),
+        limit: 4
+      },
+      "Room evidence retrieved",
+      `Prepared evidence for ${rooms[0].title}.`
     );
   }
 
@@ -135,7 +186,8 @@ function App() {
     setFeedback(null);
     setDrawerOpen(false);
     setActiveCitationIds(null);
-    setTrace(createInitialTrace(roomPackValidation, policyPack.retrievalMode));
+    setRetrievedCitations(null);
+    setTrace(createInitialTrace(roomPackValidation, traceMode(), traceStatus()));
   }
 
   function collectClues(room: Room, clueIds: string[]) {
@@ -243,8 +295,8 @@ function App() {
     });
 
     setFeedback(result.correct && !willFinishGame ? null : result.message);
-    setTrace((current) => {
-      const withValidationEvent = appendTraceEvent(current, {
+    setTrace((current) =>
+      appendTraceEvent(current, {
         type: "answer_validated",
         label: result.correct ? "Correct answer" : "Wrong answer",
         detail: result.message,
@@ -252,24 +304,24 @@ function App() {
         puzzleId: puzzle.puzzleId,
         citationIds: puzzle.citations.map((citation) => citation.citationId),
         correct: result.correct
-      });
+      })
+    );
 
-      if (!nextRoom) {
-        return withValidationEvent;
-      }
-
-      return appendRetrieval(
-        withValidationEvent,
-        retrievePolicyEvidence(nextRoom.theme, {
+    if (nextRoom) {
+      void recordRetrieval(
+        nextRoom.theme,
+        {
           sourceIds: nextRoom.puzzle.citations.map((citation) => citation.sourceId),
           limit: 4
-        }),
+        },
         "Room evidence retrieved",
-        `Prepared local evidence for ${nextRoom.title}.`
+        `Prepared evidence for ${nextRoom.title}.`
       );
-    });
+    }
+
     if (result.correct) {
       setActiveCitationIds(puzzle.citations.map((citation) => citation.citationId));
+      setRetrievedCitations(null);
       setDrawerOpen(true);
     }
   }
@@ -282,33 +334,33 @@ function App() {
       policyPack.title;
 
     setTrace((current) =>
-      appendTraceEvent(
-        appendRetrieval(
-          current,
-          retrievePolicyEvidence(query, {
-            sourceIds: matchedCitations.map((citation) => citation.sourceId),
-            sectionIds: matchedCitations.map(
-              (citation) => `${citation.sourceId}#${citation.sectionId}`
-            ),
-            limit: Math.max(1, matchedCitations.length)
-          }),
-          "Citation evidence retrieved",
-          `${matchedCitations.length || "All"} citation references requested.`
-        ),
-        {
-          type: "citation_drawer_opened",
-          label: "Citation drawer opened",
-          detail: citationIds?.length
-            ? `${citationIds.length} focused citation IDs.`
-            : "All visible citations requested.",
-          roomId: currentRoom?.roomId,
-          puzzleId: currentPuzzle?.puzzleId,
-          citationIds
-        }
-      )
+      appendTraceEvent(current, {
+        type: "citation_drawer_opened",
+        label: "Citation drawer opened",
+        detail: citationIds?.length
+          ? `${citationIds.length} focused citation IDs.`
+          : "All visible citations requested.",
+        roomId: currentRoom?.roomId,
+        puzzleId: currentPuzzle?.puzzleId,
+        citationIds
+      })
     );
     setActiveCitationIds(citationIds ?? null);
+    setRetrievedCitations(null);
     setDrawerOpen(true);
+    void recordRetrieval(
+      query,
+      {
+        sourceIds: matchedCitations.map((citation) => citation.sourceId),
+        sectionIds: matchedCitations.map(
+          (citation) => `${citation.sourceId}#${citation.sectionId}`
+        ),
+        limit: Math.max(1, matchedCitations.length)
+      },
+      "Citation evidence retrieved",
+      `${matchedCitations.length || "All"} citation references requested.`,
+      true
+    );
   }
 
   function citationsFor(citationIds?: string[]) {
@@ -369,36 +421,39 @@ function App() {
     setFeedback(null);
     setDrawerOpen(false);
     setActiveCitationIds(null);
+    setRetrievedCitations(null);
     setCreatorOpen(false);
-    setTrace((current) => {
-      const generatedTrace = {
-        ...current,
-        retrievalMode: "generated_mock" as const,
-        validation: generationResult.verifierResult.roomPackValidation
-      };
-      const withRetrieval = appendRetrieval(
-        generatedTrace,
-        retrievePolicyEvidence(generationResult.room.theme, {
-          sourceIds: generationResult.room.puzzle.citations.map(
-            (citation) => citation.sourceId
-          ),
-          limit: 4
-        }),
-        "Generated room evidence retrieved",
-        `Prepared local generated evidence for ${generationResult.room.title}.`
-      );
-
-      return appendTraceEvent(withRetrieval, {
-        type: "generated_room_played",
-        label: "Generated room played",
-        detail: `${generationResult.room.title} entered from Creator Mode.`,
-        roomId: generationResult.room.roomId,
-        puzzleId: generationResult.room.puzzle.puzzleId,
-        citationIds: generationResult.room.puzzle.citations.map(
-          (citation) => citation.citationId
-        )
-      });
-    });
+    setTrace((current) =>
+      appendTraceEvent(
+        {
+          ...current,
+          retrievalMode: "generated_mock" as const,
+          retrievalStatus: "generated_mock" as const,
+          validation: generationResult.verifierResult.roomPackValidation
+        },
+        {
+          type: "generated_room_played",
+          label: "Generated room played",
+          detail: `${generationResult.room.title} entered from Creator Mode.`,
+          roomId: generationResult.room.roomId,
+          puzzleId: generationResult.room.puzzle.puzzleId,
+          citationIds: generationResult.room.puzzle.citations.map(
+            (citation) => citation.citationId
+          )
+        }
+      )
+    );
+    void recordRetrieval(
+      generationResult.room.theme,
+      {
+        sourceIds: generationResult.room.puzzle.citations.map(
+          (citation) => citation.sourceId
+        ),
+        limit: 4
+      },
+      "Generated room evidence retrieved",
+      `Prepared generated evidence for ${generationResult.room.title}.`
+    );
   }
 
   function exportGeneratedRoom() {
@@ -448,6 +503,7 @@ function App() {
       <Header
         progress={progress}
         mode={playMode}
+        retrievalStatus={trace.retrievalStatus}
         onRestart={restartGame}
         onOpenCitations={() => openCitations()}
       />
@@ -455,6 +511,7 @@ function App() {
       {progress.phase === "lobby" && (
         <>
           <Lobby
+            retrievalStatus={trace.retrievalStatus}
             onStart={startGame}
             onOpenCitations={() => openCitations()}
             onOpenCreator={() => setCreatorOpen(true)}
@@ -553,16 +610,25 @@ function App() {
 interface HeaderProps {
   progress: PlayerProgress;
   mode: PlayMode;
+  retrievalStatus: RetrievalStatus;
   onRestart: () => void;
   onOpenCitations: () => void;
 }
 
-function Header({ progress, mode, onRestart, onOpenCitations }: HeaderProps) {
+function Header({
+  progress,
+  mode,
+  retrievalStatus,
+  onRestart,
+  onOpenCitations
+}: HeaderProps) {
   return (
     <header className="topbar">
       <div>
         <p className="eyebrow">
-          {mode === "generated" ? "Generated mock" : "Static local mock"}
+          {mode === "generated"
+            ? `Generated mock / ${retrievalStatusLabel(retrievalStatus)}`
+            : retrievalStatusLabel(retrievalStatus)}
         </p>
         <h1>Policy Escape Room</h1>
       </div>
@@ -585,12 +651,18 @@ function Header({ progress, mode, onRestart, onOpenCitations }: HeaderProps) {
 }
 
 interface LobbyProps {
+  retrievalStatus: RetrievalStatus;
   onStart: () => void;
   onOpenCitations: () => void;
   onOpenCreator: () => void;
 }
 
-function Lobby({ onStart, onOpenCitations, onOpenCreator }: LobbyProps) {
+function Lobby({
+  retrievalStatus,
+  onStart,
+  onOpenCitations,
+  onOpenCreator
+}: LobbyProps) {
   return (
     <section className="lobby-grid">
       <div className="lobby-scene" aria-label="Policy escape room lobby">
@@ -601,7 +673,7 @@ function Lobby({ onStart, onOpenCitations, onOpenCreator }: LobbyProps) {
         </div>
         <div className="lobby-terminal">
           <p>{policyPack.title}</p>
-          <strong>{policyPack.retrievalMode}</strong>
+          <strong>{retrievalStatusLabel(retrievalStatus)}</strong>
         </div>
       </div>
 
@@ -1132,6 +1204,22 @@ function uniqueCitations(citations: Citation[]) {
   );
 }
 
+function retrievalStatusLabel(status: RetrievalStatus) {
+  if (status === "foundry_iq") {
+    return "foundry_iq";
+  }
+
+  if (status === "foundry_iq_fallback") {
+    return "foundry_iq fallback";
+  }
+
+  if (status === "generated_mock") {
+    return "generated_mock";
+  }
+
+  return "local_mock";
+}
+
 function traceTypeForAgent(agentName: GenerationResult["agentSteps"][number]["agentName"]) {
   if (agentName === "Source Curator") {
     return "source_curated";
@@ -1163,7 +1251,7 @@ function TracePanel({ trace, open, onToggle }: TracePanelProps) {
       <button className="trace-toggle" type="button" onClick={onToggle}>
         <Activity size={18} aria-hidden="true" />
         <span>Trace</span>
-        <strong>{trace.retrievalMode}</strong>
+        <strong>{retrievalStatusLabel(trace.retrievalStatus)}</strong>
       </button>
 
       {open && (
@@ -1171,6 +1259,7 @@ function TracePanel({ trace, open, onToggle }: TracePanelProps) {
           <div className="trace-metrics">
             <span>{trace.validation.valid ? "Valid pack" : "Invalid pack"}</span>
             <span>{trace.validation.citationCheckCount} citation checks</span>
+            <span>{retrievalStatusLabel(trace.retrievalStatus)}</span>
             <span>{trace.recentRetrievals.length} retrievals</span>
           </div>
 
