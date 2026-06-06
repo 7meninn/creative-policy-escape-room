@@ -281,6 +281,122 @@ h3 {
   gap: 18px;
 }
 
+.creator-panel {
+  max-width: 1440px;
+  margin: 16px auto 0;
+  border: 1px solid rgba(103, 212, 216, 0.24);
+  background: rgba(24, 29, 26, 0.92);
+  border-radius: 8px;
+  padding: 18px;
+}
+
+.creator-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.creator-header p:not(.eyebrow) {
+  color: var(--muted);
+  margin-top: 8px;
+}
+
+.creator-controls {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.3fr) minmax(180px, 0.9fr) auto;
+  gap: 10px;
+  align-items: end;
+  margin-bottom: 14px;
+}
+
+.creator-controls label {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.creator-controls select {
+  width: 100%;
+  min-height: 40px;
+  border: 1px solid rgba(244, 241, 232, 0.14);
+  border-radius: 8px;
+  background: #111715;
+  color: var(--text);
+  padding: 0 10px;
+}
+
+.creator-result {
+  display: grid;
+  gap: 12px;
+}
+
+.generated-room-card,
+.agent-step,
+.verifier-strip,
+.creator-errors {
+  border: 1px solid rgba(244, 241, 232, 0.1);
+  border-radius: 8px;
+  background: rgba(244, 241, 232, 0.04);
+}
+
+.generated-room-card {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px;
+}
+
+.generated-room-card p:not(.eyebrow),
+.agent-step p,
+.verifier-strip span,
+.creator-errors p {
+  color: var(--muted);
+}
+
+.verifier-strip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 0 12px;
+}
+
+.verifier-strip strong {
+  color: var(--green);
+}
+
+.agent-step-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.agent-step {
+  padding: 10px;
+}
+
+.agent-step span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--cyan);
+  font-weight: 850;
+}
+
+.agent-step p {
+  margin-top: 7px;
+  line-height: 1.4;
+}
+
+.creator-errors {
+  border-color: rgba(239, 123, 109, 0.35);
+  padding: 10px;
+}
+
 .lede {
   font-size: 1.05rem;
   line-height: 1.55;
@@ -901,7 +1017,9 @@ blockquote {
   .redaction-grid,
   .debrief-grid,
   .concept-grid,
-  .citation-preview-grid {
+  .citation-preview-grid,
+  .creator-controls,
+  .agent-step-grid {
     grid-template-columns: 1fr;
   }
 

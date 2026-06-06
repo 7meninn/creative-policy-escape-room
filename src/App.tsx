@@ -20,7 +20,15 @@ import {
   ShieldCheck,
   X
 } from "lucide-react";
-import { policyPack, roomPackValidation, rooms } from "./data/rooms";
+import { generateRoomDraft } from "./agents/generationPipeline";
+import { verifyGeneratedRoom } from "./agents/verifier";
+import { CreatorMode } from "./creator/CreatorMode";
+import {
+  policyPack,
+  policySources,
+  roomPackValidation,
+  rooms
+} from "./data/rooms";
 import {
   buildDebrief,
   createInitialProgress,
@@ -32,6 +40,8 @@ import { appendRetrieval, appendTraceEvent, createInitialTrace } from "./tracing
 import type {
   Citation,
   ClassificationPuzzle,
+  GenerationRequest,
+  GenerationResult,
   GameTrace,
   PlayerProgress,
   Puzzle,
@@ -59,6 +69,15 @@ function App() {
   const [trace, setTrace] = useState<GameTrace>(() =>
     createInitialTrace(roomPackValidation, policyPack.retrievalMode)
   );
+  const [creatorOpen, setCreatorOpen] = useState(false);
+  const [generationRequest, setGenerationRequest] = useState<GenerationRequest>({
+    sourceId: "SYN-POL-005",
+    concept: "MFA requirement",
+    difficulty: "standard",
+    seed: "phase-3-default"
+  });
+  const [generationResult, setGenerationResult] =
+    useState<GenerationResult | null>(null);
 
   const currentRoom = rooms[progress.currentRoomIndex];
   const currentPuzzle = currentRoom?.puzzle;
@@ -67,7 +86,10 @@ function App() {
   const visibleCitations = useMemo(() => {
     const allCitations =
       progress.phase === "debrief" || activeCitationIds
-        ? rooms.flatMap((room) => room.puzzle.citations)
+        ? [
+            ...rooms.flatMap((room) => room.puzzle.citations),
+            ...(generationResult?.room.puzzle.citations ?? [])
+          ]
         : currentPuzzle?.citations ?? [];
 
     if (!activeCitationIds) {
@@ -77,7 +99,7 @@ function App() {
     return allCitations.filter((citation) =>
       activeCitationIds.includes(citation.citationId)
     );
-  }, [activeCitationIds, currentPuzzle, progress.phase]);
+  }, [activeCitationIds, currentPuzzle, generationResult, progress.phase]);
 
   function startGame() {
     setProgress({ ...createInitialProgress(), phase: "playing" });
@@ -278,7 +300,10 @@ function App() {
   }
 
   function citationsFor(citationIds?: string[]) {
-    const allCitations = rooms.flatMap((room) => room.puzzle.citations);
+    const allCitations = [
+      ...rooms.flatMap((room) => room.puzzle.citations),
+      ...(generationResult?.room.puzzle.citations ?? [])
+    ];
 
     if (!citationIds) {
       return currentPuzzle?.citations ?? allCitations;
@@ -287,6 +312,35 @@ function App() {
     return allCitations.filter((citation) =>
       citationIds.includes(citation.citationId)
     );
+  }
+
+  function generateCreatorRoom() {
+    const result = generateRoomDraft(generationRequest, verifyGeneratedRoom);
+    setGenerationResult(result);
+    setFeedback(`${result.room.title} generated in Creator Mode.`);
+    setTrace((current) => {
+      const withAgentSteps = result.agentSteps.reduce(
+        (traceState, step) =>
+          appendTraceEvent(traceState, {
+            type: traceTypeForAgent(step.agentName),
+            label: step.agentName,
+            detail: step.summary,
+            citationIds: step.citationIds
+          }),
+        current
+      );
+
+      return appendTraceEvent(withAgentSteps, {
+        type: "creator_previewed",
+        label: "Creator preview generated",
+        detail: `${result.room.title} is ready for review.`,
+        roomId: result.room.roomId,
+        puzzleId: result.room.puzzle.puzzleId,
+        citationIds: result.room.puzzle.citations.map(
+          (citation) => citation.citationId
+        )
+      });
+    });
   }
 
   function getPuzzleAnswer(puzzle: Puzzle) {
@@ -310,7 +364,24 @@ function App() {
       />
 
       {progress.phase === "lobby" && (
-        <Lobby onStart={startGame} onOpenCitations={() => openCitations()} />
+        <>
+          <Lobby
+            onStart={startGame}
+            onOpenCitations={() => openCitations()}
+            onOpenCreator={() => setCreatorOpen(true)}
+          />
+          {creatorOpen && (
+            <CreatorMode
+              sourcePack={policySources}
+              request={generationRequest}
+              result={generationResult}
+              onRequestChange={setGenerationRequest}
+              onGenerate={generateCreatorRoom}
+              onClose={() => setCreatorOpen(false)}
+              onOpenCitations={openCitations}
+            />
+          )}
+        </>
       )}
 
       {progress.phase === "playing" && currentRoom && (
@@ -420,9 +491,10 @@ function Header({ progress, onRestart, onOpenCitations }: HeaderProps) {
 interface LobbyProps {
   onStart: () => void;
   onOpenCitations: () => void;
+  onOpenCreator: () => void;
 }
 
-function Lobby({ onStart, onOpenCitations }: LobbyProps) {
+function Lobby({ onStart, onOpenCitations, onOpenCreator }: LobbyProps) {
   return (
     <section className="lobby-grid">
       <div className="lobby-scene" aria-label="Policy escape room lobby">
@@ -464,6 +536,10 @@ function Lobby({ onStart, onOpenCitations }: LobbyProps) {
           <button className="secondary-button" type="button" onClick={onOpenCitations}>
             <FileText size={18} aria-hidden="true" />
             <span>Policy Pack</span>
+          </button>
+          <button className="secondary-button" type="button" onClick={onOpenCreator}>
+            <Lightbulb size={18} aria-hidden="true" />
+            <span>Creator Mode</span>
           </button>
         </div>
       </div>
@@ -947,6 +1023,23 @@ function uniqueCitations(citations: Citation[]) {
   return Array.from(
     new Map(citations.map((citation) => [citation.citationId, citation])).values()
   );
+}
+
+function traceTypeForAgent(agentName: GenerationResult["agentSteps"][number]["agentName"]) {
+  if (agentName === "Source Curator") {
+    return "source_curated";
+  }
+  if (agentName === "Room Designer") {
+    return "room_designed";
+  }
+  if (agentName === "Puzzle Maker") {
+    return "puzzle_created";
+  }
+  if (agentName === "Verifier") {
+    return "generation_verified";
+  }
+
+  return "creator_previewed";
 }
 
 interface TracePanelProps {
