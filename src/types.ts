@@ -6,6 +6,12 @@ export type RetrievalMode =
   | "foundry_iq"
   | "azure_ai_search";
 
+export type RetrievalStatus =
+  | "local_mock"
+  | "generated_mock"
+  | "foundry_iq"
+  | "foundry_iq_fallback";
+
 export type PuzzleType =
   | "sequence_lock"
   | "classification_lock"
@@ -215,6 +221,34 @@ export interface RetrievalFilters {
   limit?: number;
 }
 
+export interface RetrievalRuntimeConfig {
+  mode: "local_mock" | "foundry_iq";
+  apiUrl: string;
+}
+
+export interface FoundryIqConfig {
+  searchEndpoint: string;
+  knowledgeBase: string;
+  knowledgeSourceName?: string;
+  apiVersion: string;
+  maxOutputSizeInTokens: number;
+  maxRuntimeInSeconds: number;
+}
+
+export interface RetrievalRequest {
+  query: string;
+  filters?: RetrievalFilters;
+}
+
+export interface RetrievalRuntimeResult {
+  evidence: EvidenceBundle;
+  status: RetrievalStatus;
+  latencyMs: number;
+  citationMappingCount: number;
+  fallbackReason?: string;
+  error?: string;
+}
+
 export interface RoomPackValidationResult {
   valid: boolean;
   errors: string[];
@@ -230,6 +264,8 @@ export type TraceEventType =
   | "citation_drawer_opened"
   | "hint_revealed"
   | "answer_validated"
+  | "retrieval_failed"
+  | "retrieval_fallback"
   | "source_curated"
   | "room_designed"
   | "puzzle_created"
@@ -253,6 +289,7 @@ export interface TraceEvent {
 export interface GameTrace {
   runId: string;
   retrievalMode: RetrievalMode;
+  retrievalStatus: RetrievalStatus;
   validation: RoomPackValidationResult;
   events: TraceEvent[];
   recentRetrievals: EvidenceBundle[];
