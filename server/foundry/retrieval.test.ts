@@ -48,7 +48,7 @@ describe("retrieveWithFoundryFallback", () => {
     expect(fetchSpy).toHaveBeenCalledOnce();
     const firstCall = fetchSpy.mock.calls[0] as unknown[];
     expect(String(firstCall[0])).toContain(
-      "/knowledgebases('synthetic-kb')/retrieve"
+      "/knowledgebases/synthetic-kb/retrieve"
     );
   });
 
