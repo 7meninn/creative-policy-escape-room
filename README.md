@@ -4,7 +4,7 @@
 
 Playable browser game for the Agents League Creative Apps track. The game is
 data-driven with validated synthetic policy JSON, deterministic local mock
-retrieval, deterministic generated-room agents, optional Foundry IQ retrieval,
+retrieval, deterministic generated-room agents, live Foundry IQ submission mode,
 local GitHub Copilot MCP tools, and a visible `GameTrace`.
 
 ## What works
@@ -19,10 +19,11 @@ local GitHub Copilot MCP tools, and a visible `GameTrace`.
   checks, answer validation events, and recent retrieval queries.
 - Creator Mode for `generated_mock` room drafts from local synthetic policy
   sources.
-- Optional `foundry_iq` mode through a local Node proxy.
+- Live `foundry_iq` mode through a local Node proxy for the Microsoft IQ
+  submission path.
 - Local MCP server for GitHub Copilot in VS Code.
-- Deterministic safety scan and evaluation runner for Phase 6 evidence.
-- No uploads, and no credentials required for the default demo.
+- Deterministic safety scan, evaluation runner, and live IQ submission gate.
+- No uploads, and no credentials required for offline development mode.
 
 ## Run locally
 
@@ -33,16 +34,22 @@ npm run dev
 
 Open the local Vite URL shown in the terminal.
 
-## Optional Foundry IQ Mode
+## Live Foundry IQ Submission Mode
 
-Phase 4 can retrieve evidence from a Foundry IQ knowledge base built from the
-same synthetic policy pack. It is optional; `local_mock` remains the reliable
-default.
+The Agents League submission path uses a live Foundry IQ knowledge base built
+from the same synthetic policy pack. `local_mock` remains available for offline
+development, but final demo proof must show `foundry_iq` with no fallback.
 
 1. Follow [docs/foundry-iq-setup.md](docs/foundry-iq-setup.md).
 2. Copy `.env.example` to `.env.local` and set the Foundry IQ values.
 3. Authenticate with `az login` or service-principal environment variables.
-4. Run:
+4. Verify live IQ:
+
+```bash
+npm run iq:verify
+```
+
+5. Run the app in live IQ mode:
 
 ```bash
 npm run dev:foundry
@@ -54,7 +61,8 @@ back into the existing `EvidenceBundle` and citation format.
 
 If configuration, auth, network access, or citation mapping fails, the trace
 panel shows `foundry_iq fallback` and the app continues with deterministic
-synthetic local evidence.
+synthetic local evidence. That fallback keeps the app playable, but it fails
+`npm run iq:verify` and is not accepted as submission proof.
 
 ## Optional Copilot MCP Mode
 
@@ -106,10 +114,10 @@ The deterministic local agents are:
 - Verifier
 - Debrief Writer
 
-## Data-driven mock mode
+## Retrieval modes
 
-The app intentionally uses `local_mock` retrieval in this phase. The retrieval
-adapter reads only synthetic JSON policy sources and returns deterministic
+`local_mock` retrieval is the offline development path. The retrieval adapter
+reads only synthetic JSON policy sources and returns deterministic
 `EvidenceBundle` objects with snippets, citations, confidence, safety flags, and
 `retrievalMode: "local_mock"`.
 
@@ -117,7 +125,8 @@ Generated rooms use `retrievalMode: "generated_mock"` and are verified with the
 same citation/source-section checks as the static room pack.
 
 `foundry_iq` mode uses the same public TypeScript retrieval shape, but routes
-through the local proxy so credentials are never exposed to the browser.
+through the local proxy so credentials are never exposed to the browser. For
+submission, `npm run iq:verify` must pass with `retrievalStatus: "foundry_iq"`.
 
 The room pack validator checks that:
 
@@ -138,8 +147,17 @@ npm run eval:run
 npm audit --audit-level=moderate
 ```
 
+Live submission gate:
+
+```bash
+npm run iq:verify
+npm run submission:check
+```
+
 See [docs/evaluation-report.md](docs/evaluation-report.md) for the Phase 6
-safety and reliability evidence.
+safety and reliability evidence, and
+[docs/submission-readiness.md](docs/submission-readiness.md) for the final live
+IQ submission checklist.
 
 ## Synthetic data note
 

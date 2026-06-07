@@ -54,7 +54,7 @@ Use policy-escape-room.export_escape_room to produce a citation_report_json arti
 - No `.env.local`, credentials, tenant data, uploads, or real policy documents
   are required.
 - Tool requests that look like prompt injection or real secrets fail closed.
-- Foundry IQ remains optional and server-side only through the existing local
+- Live Foundry IQ submission proof stays server-side through the existing local
   proxy; credentials are never exposed through MCP responses.
 
 ## Troubleshooting

@@ -1,8 +1,8 @@
 # Phase 6 Evaluation Report
 
 This report summarizes the local reliability, safety, accessibility, and
-grounding checks added for Phase 6. The app still uses synthetic demo content
-only, and the default demo remains credential-free.
+grounding checks added for Phase 6, plus the Phase 7 live-IQ submission gate.
+The app still uses synthetic demo content only.
 
 ## Verification Commands
 
@@ -11,10 +11,12 @@ Latest local Phase 6 verification:
 | Check | Result |
 |---|---|
 | `npm run lint` | Passed |
-| `npm run test` | Passed, 66 tests across 16 files |
+| `npm run test` | Passed, 71 tests across 17 files |
 | `npm run build` | Passed |
 | `npm run safety:scan` | Passed |
 | `npm run eval:run` | Runs safety scan, lint, tests, and build |
+| `npm run iq:verify` | Requires live Foundry IQ and fails on fallback |
+| `npm run submission:check` | Runs local gates plus live IQ verification |
 | `npm audit --audit-level=moderate` | Passed with 0 vulnerabilities |
 
 The GitHub Actions workflow also runs dependency audit, safety scan, lint, test,
@@ -79,8 +81,10 @@ Manual browser checks:
 
 - GitHub Copilot usage: documented through the development process and MCP
   workflow docs.
-- Microsoft IQ integration: optional Foundry IQ retrieval mode with documented
-  setup and safe local fallback.
+- Microsoft IQ integration: live Foundry IQ retrieval mode with a hard
+  `npm run iq:verify` submission gate. Safe local fallback remains available
+  for development and outage resilience, but fallback fails submission
+  verification.
 - Creative application: browser-playable policy escape room with citations,
   trace, Creator Mode, and Copilot MCP tools.
 - Safety: synthetic-only policy pack, deterministic local mock mode, scanner,
@@ -88,8 +92,10 @@ Manual browser checks:
 
 ## Honest Limitations
 
-- Live Foundry IQ requires local Azure/Foundry configuration and is optional for
-  judging; local mock remains the reliable default.
+- Live Foundry IQ requires Azure/Foundry configuration on the demo or hosted
+  environment before `npm run iq:verify` can pass.
+- `local_mock` remains the reliable offline path, but it is not accepted as
+  Microsoft IQ submission evidence.
 - The app is a learning demo and is not formal compliance proof.
-- Phase 7 still needs final submission polish: screenshots, demo video,
-  architecture diagram, judging table, and Copilot usage log.
+- Final submission still needs captured screenshots, a short demo video, and
+  the hosted URL recorded after deployment.

@@ -92,8 +92,7 @@ function retrieveBody(request: RetrievalRequest, config: FoundryIqConfig) {
       }
     ],
     includeActivity: true,
-    maxOutputSizeInTokens: config.maxOutputSizeInTokens,
-    maxRuntimeInSeconds: config.maxRuntimeInSeconds
+    maxOutputSize: config.maxOutputSizeInTokens
   };
 
   if (config.knowledgeSourceName) {
@@ -131,12 +130,9 @@ function retrievalPrompt(request: RetrievalRequest) {
 }
 
 function retrieveUrl(config: FoundryIqConfig) {
-  const knowledgeBase = encodeURIComponent(config.knowledgeBase).replaceAll(
-    "'",
-    "%27"
-  );
+  const knowledgeBase = encodeURIComponent(config.knowledgeBase);
   const apiVersion = encodeURIComponent(config.apiVersion);
-  return `${config.searchEndpoint}/knowledgebases('${knowledgeBase}')/retrieve?api-version=${apiVersion}`;
+  return `${config.searchEndpoint}/knowledgebases/${knowledgeBase}/retrieve?api-version=${apiVersion}`;
 }
 
 async function tokenForSearch(

@@ -10,6 +10,8 @@
     "mcp:stdio": "tsx server/mcp/server.ts",
     "safety:scan": "tsx server/evaluation/safetyCli.ts",
     "eval:run": "tsx server/evaluation/evalCli.ts",
+    "iq:verify": "tsx server/submission/iqVerifyCli.ts",
+    "submission:check": "tsx server/submission/submissionCheckCli.ts",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "test": "vitest run"
