@@ -266,6 +266,8 @@ export type TraceEventType =
   | "answer_validated"
   | "retrieval_failed"
   | "retrieval_fallback"
+  | "mcp_tool_succeeded"
+  | "mcp_tool_failed"
   | "source_curated"
   | "room_designed"
   | "puzzle_created"
@@ -346,4 +348,36 @@ export interface GenerationResult {
   verifierResult: VerifierResult;
   debrief: GeneratedDebrief;
   agentSteps: AgentStep[];
+}
+
+export type McpToolName =
+  | "generate_room"
+  | "create_policy_puzzle"
+  | "validate_answer"
+  | "explain_citation"
+  | "export_escape_room";
+
+export type McpExportFormat =
+  | "room_pack_json"
+  | "citation_report_json"
+  | "debrief_markdown"
+  | "trace_json";
+
+export interface McpToolTrace {
+  eventId: string;
+  toolName: McpToolName;
+  status: "success" | "error";
+  detail: string;
+  timestamp: string;
+}
+
+export interface McpToolResult<TPayload = unknown> {
+  toolName: McpToolName;
+  status: "success" | "error";
+  retrievalStatus: RetrievalStatus;
+  citations: Citation[];
+  trace: McpToolTrace[];
+  payload?: TPayload;
+  errorCode?: string;
+  message?: string;
 }

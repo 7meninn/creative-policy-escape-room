@@ -1,0 +1,9 @@
+{
+  "servers": {
+    "policy-escape-room": {
+      "type": "stdio",
+      "command": "npm",
+      "args": ["run", "-s", "mcp:stdio"]
+    }
+  }
+}
