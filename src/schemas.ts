@@ -203,6 +203,8 @@ export const gameTraceSchema = z.object({
         "answer_validated",
         "retrieval_failed",
         "retrieval_fallback",
+        "mcp_tool_succeeded",
+        "mcp_tool_failed",
         "source_curated",
         "room_designed",
         "puzzle_created",
