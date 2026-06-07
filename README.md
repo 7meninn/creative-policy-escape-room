@@ -5,7 +5,7 @@
 Playable browser game for the Agents League Creative Apps track. The game is
 data-driven with validated synthetic policy JSON, deterministic local mock
 retrieval, deterministic generated-room agents, optional Foundry IQ retrieval,
-and a visible `GameTrace`.
+local GitHub Copilot MCP tools, and a visible `GameTrace`.
 
 ## What works
 
@@ -20,7 +20,8 @@ and a visible `GameTrace`.
 - Creator Mode for `generated_mock` room drafts from local synthetic policy
   sources.
 - Optional `foundry_iq` mode through a local Node proxy.
-- No MCP, no uploads, and no credentials required for the default demo.
+- Local MCP server for GitHub Copilot in VS Code.
+- No uploads, and no credentials required for the default demo.
 
 ## Run locally
 
@@ -53,6 +54,28 @@ back into the existing `EvidenceBundle` and citation format.
 If configuration, auth, network access, or citation mapping fails, the trace
 panel shows `foundry_iq fallback` and the app continues with deterministic
 synthetic local evidence.
+
+## Optional Copilot MCP Mode
+
+Phase 5 exposes the same synthetic policy, puzzle, citation, validation, and
+export logic as local MCP tools for GitHub Copilot in VS Code.
+
+1. Open this repository in VS Code with GitHub Copilot enabled.
+2. Review [docs/mcp-copilot-setup.md](docs/mcp-copilot-setup.md).
+3. Trust the workspace MCP server from `.vscode/mcp.json`.
+4. Start Copilot Chat in Agent Mode and ask it to use the
+   `policy-escape-room` tools.
+
+The local server runs with:
+
+```bash
+npm run mcp:stdio
+```
+
+It exposes `generate_room`, `create_policy_puzzle`, `validate_answer`,
+`explain_citation`, and `export_escape_room`. The tools are JSON-only,
+synthetic-only, credential-free by default, and fail closed for unsafe or
+uncited requests.
 
 ## Game path
 
