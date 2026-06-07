@@ -381,3 +381,39 @@ export interface McpToolResult<TPayload = unknown> {
   errorCode?: string;
   message?: string;
 }
+
+export type SafetySeverity = "info" | "warning" | "error";
+
+export type SafetyRule =
+  | "synthetic_disclaimer"
+  | "citation_coverage"
+  | "prompt_injection"
+  | "secret_like"
+  | "pii_like"
+  | "confidential_language"
+  | "legal_claim"
+  | "accessibility_metadata";
+
+export interface SafetyFinding {
+  rule: SafetyRule;
+  severity: SafetySeverity;
+  location: string;
+  message: string;
+  excerpt?: string;
+  approved?: boolean;
+}
+
+export interface EvaluationCheck {
+  checkId: string;
+  label: string;
+  status: "passed" | "warning" | "failed";
+  summary: string;
+  findings: SafetyFinding[];
+}
+
+export interface EvaluationResult {
+  generatedAt: string;
+  status: "passed" | "failed";
+  checks: EvaluationCheck[];
+  safetyFindings: SafetyFinding[];
+}

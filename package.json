@@ -8,6 +8,8 @@
     "api:foundry": "tsx server/foundryApi.ts",
     "dev:foundry": "concurrently -k -n api,web \"npm run api:foundry\" \"cross-env VITE_RETRIEVAL_MODE=foundry_iq vite\"",
     "mcp:stdio": "tsx server/mcp/server.ts",
+    "safety:scan": "tsx server/evaluation/safetyCli.ts",
+    "eval:run": "tsx server/evaluation/evalCli.ts",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "test": "vitest run"

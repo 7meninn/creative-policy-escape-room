@@ -1062,6 +1062,8 @@ blockquote {
   .room-heading {
     align-items: stretch;
     flex-direction: column;
+    min-width: 0;
+    width: 100%;
   }
 
   .topbar-actions,
@@ -1069,9 +1071,31 @@ blockquote {
     width: 100%;
   }
 
+  .topbar-actions {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    max-width: calc(100vw - 24px);
+    min-width: 0;
+  }
+
   .topbar-actions > *,
   .button-row > * {
+    min-width: 0;
     flex: 1 1 auto;
+  }
+
+  .topbar-actions .score,
+  .topbar-actions .icon-button {
+    width: 100%;
+    padding-inline: 8px;
+  }
+
+  .topbar-actions .icon-button span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .lobby-panel {

@@ -21,6 +21,7 @@ local GitHub Copilot MCP tools, and a visible `GameTrace`.
   sources.
 - Optional `foundry_iq` mode through a local Node proxy.
 - Local MCP server for GitHub Copilot in VS Code.
+- Deterministic safety scan and evaluation runner for Phase 6 evidence.
 - No uploads, and no credentials required for the default demo.
 
 ## Run locally
@@ -129,11 +130,16 @@ The room pack validator checks that:
 ## Verify
 
 ```bash
-npm run build
 npm run lint
 npm run test
+npm run build
+npm run safety:scan
+npm run eval:run
 npm audit --audit-level=moderate
 ```
+
+See [docs/evaluation-report.md](docs/evaluation-report.md) for the Phase 6
+safety and reliability evidence.
 
 ## Synthetic data note
 
