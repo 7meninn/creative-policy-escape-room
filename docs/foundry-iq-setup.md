@@ -1,7 +1,8 @@
 # Foundry IQ Setup
 
-Phase 4 adds an optional live `foundry_iq` retrieval path. The default app still
-runs with `local_mock` and no credentials.
+Phase 7 uses live `foundry_iq` retrieval as the Microsoft IQ submission path.
+`local_mock` still works for offline development, but submission proof must show
+`foundry_iq` with no fallback.
 
 ## What Stays Synthetic
 
@@ -77,16 +78,20 @@ npm run dev:foundry
 Open the Vite URL. The header and trace panel should show `foundry_iq` after a
 successful retrieval. If configuration, auth, network access, citation mapping,
 or the knowledge base fails, the app records `foundry_iq fallback` and continues
-with deterministic local mock evidence.
+with deterministic local mock evidence. Fallback is a runtime safety net, not
+valid submission evidence.
 
 ## Verification
 
-1. Enter Room 1 and open **Trace**.
-2. Confirm retrieval status becomes `foundry_iq` or `foundry_iq fallback`.
-3. Open **Sources** in each static room and confirm citations show synthetic
+1. Run `npm run iq:verify` and confirm it passes.
+2. Enter Room 1 and open **Trace**.
+3. Confirm retrieval status becomes exactly `foundry_iq`.
+4. Open **Sources** in each static room and confirm citations show synthetic
    policy IDs and section IDs.
-4. Disable the proxy or remove Foundry env vars and confirm the game remains
-   playable with local mock fallback.
+5. Run `npm run submission:check` on the demo machine after live IQ is working.
+6. Disable the proxy or remove Foundry env vars and confirm the game remains
+   playable with local mock fallback, then restore live IQ before recording the
+   submission proof.
 
 References:
 
