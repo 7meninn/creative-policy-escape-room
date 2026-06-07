@@ -7,12 +7,14 @@
     "dev": "vite",
     "api:foundry": "tsx server/foundryApi.ts",
     "dev:foundry": "concurrently -k -n api,web \"npm run api:foundry\" \"cross-env VITE_RETRIEVAL_MODE=foundry_iq vite\"",
+    "mcp:stdio": "tsx server/mcp/server.ts",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "test": "vitest run"
   },
   "dependencies": {
     "@azure/identity": "^4.13.1",
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "@vitejs/plugin-react": "^5.0.0",
     "dotenv": "^17.4.2",
     "lucide-react": "^0.468.0",
